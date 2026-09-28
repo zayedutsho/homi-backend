@@ -1,0 +1,18 @@
+enum Role {
+  ADMIN
+  TENANT
+    OWNER
+
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+  DELETED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
