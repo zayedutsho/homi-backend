@@ -1,4 +1,4 @@
-model Patient {
+model Tenant {
   id String @id @default(uuid(7))
 
   name          String

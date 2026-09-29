@@ -3,6 +3,7 @@
 ## 1. Project Setup & Architecture
 
 **Tech Stack:**
+
 - Next.js 14+ with App Router
 - TypeScript
 - Tailwind CSS + shadcn/ui for components
@@ -13,6 +14,7 @@
 - Lucide React for icons
 
 **Project Structure:**
+
 ```
 src/
 ├── app/                    # App Router pages
@@ -38,6 +40,7 @@ src/
 ## 2. Authentication System
 
 **Features to implement:**
+
 - Patient registration with email OTP verification
 - Login page with email/password
 - Google OAuth integration
@@ -47,6 +50,7 @@ src/
 - Logout functionality
 
 **Pages:**
+
 - `/login` - Login form with Google OAuth
 - `/register` - Patient registration
 - `/verify-email` - OTP verification
@@ -54,6 +58,7 @@ src/
 - `/reset-password` - Set new password with OTP
 
 **Implementation Details:**
+
 - Store tokens in memory (not cookies due to backend cookie config issues)
 - Implement automatic token refresh
 - Create auth middleware for route protection
@@ -64,6 +69,7 @@ src/
 ## 3. Patient Dashboard
 
 **Features:**
+
 - Profile management (view/edit personal info)
 - Profile image upload
 - Appointment history and status
@@ -73,6 +79,7 @@ src/
 - Analytics (appointment counts, spending)
 
 **Pages:**
+
 - `/dashboard` - Overview with stats
 - `/dashboard/profile` - Profile management
 - `/dashboard/appointments` - Appointment list
@@ -87,6 +94,7 @@ src/
 ## 4. Doctor Dashboard
 
 **Features:**
+
 - Profile management (specialization, fees, bio)
 - Schedule management (create, publish, delete)
 - View appointments and update status
@@ -95,6 +103,7 @@ src/
 - View meeting links for scheduled appointments
 
 **Pages:**
+
 - `/doctor` - Dashboard overview
 - `/doctor/profile` - Profile management
 - `/doctor/schedules` - Schedule list
@@ -110,6 +119,7 @@ src/
 ## 5. Admin Dashboard
 
 **Features:**
+
 - Doctor verification (approve/reject applications)
 - Manage all doctors and patients
 - View all appointments and payments
@@ -117,6 +127,7 @@ src/
 - User management (block/unblock)
 
 **Pages:**
+
 - `/admin` - Dashboard overview
 - `/admin/doctors` - Doctor list with verification status
 - `/admin/doctors/:id` - Doctor details and verification
@@ -131,6 +142,7 @@ src/
 ## 6. Public Pages
 
 **Features:**
+
 - Landing page with features
 - Doctor listing with filters
 - Doctor profiles
@@ -138,6 +150,7 @@ src/
 - Responsive design
 
 **Pages:**
+
 - `/` - Landing page
 - `/doctors` - Public doctor listing
 - `/doctors/:id` - Doctor public profile
@@ -149,12 +162,14 @@ src/
 ## 7. Key Components to Build
 
 **Layout Components:**
+
 - Header with navigation
 - Sidebar for dashboards
 - Footer
 - Mobile responsive menu
 
 **Reusable Components:**
+
 - Data tables with sorting, filtering, pagination
 - Form components (inputs, selects, date pickers)
 - Modal dialogs
@@ -164,6 +179,7 @@ src/
 - Payment integration components
 
 **Feature-Specific Components:**
+
 - Appointment booking flow
 - Schedule creation form
 - Prescription form
@@ -176,12 +192,14 @@ src/
 ## 8. API Integration
 
 **API Client Setup:**
+
 - Axios instance with interceptors
 - Automatic token attachment
 - Error handling and retry logic
 - Request/response transformation
 
 **React Query Integration:**
+
 - Query hooks for all API endpoints
 - Mutation hooks for form submissions
 - Cache management and invalidation
@@ -192,6 +210,7 @@ src/
 ## 9. State Management
 
 **Zustand Stores:**
+
 - Auth store (user, tokens, login/logout)
 - UI store (sidebar state, modals)
 - Cart store (if implementing any booking flow state)
@@ -201,6 +220,7 @@ src/
 ## 10. Form Handling
 
 **Zod Schemas (mirroring backend):**
+
 - Registration/Login forms
 - Profile update forms
 - Schedule creation forms
@@ -212,6 +232,7 @@ src/
 ## 11. Key Features Implementation
 
 **Appointment Booking Flow:**
+
 1. Select doctor from list
 2. View available schedules
 3. Select time slot
@@ -221,6 +242,7 @@ src/
 7. Show confirmation
 
 **Doctor Verification Flow:**
+
 1. Admin views pending applications
 2. Review documents and profile
 3. Approve or reject with reason
@@ -228,6 +250,7 @@ src/
 5. Update doctor status
 
 **Prescription Writing:**
+
 1. Select completed appointment
 2. Enter findings and symptoms
 3. Add medicines with dosage
@@ -261,7 +284,7 @@ src/
 
 - Global error boundary
 - API error handling
-- Form validation errors
+- Form validation errorswdw
 - Network error states
 - 404 and 403 pages
 
@@ -288,6 +311,7 @@ src/
 ## Priority Implementation Order
 
 ### Phase 1 (MVP - 2 weeks):
+
 1. Project setup and authentication
 2. Basic layout and navigation
 3. Patient registration/login
@@ -295,18 +319,21 @@ src/
 5. Basic patient dashboard
 
 ### Phase 2 (Core Features - 2 weeks):
+
 1. Appointment booking flow
 2. Doctor schedule management
 3. Payment integration
 4. Basic admin dashboard
 
 ### Phase 3 (Advanced Features - 1 week):
+
 1. Prescription management
 2. Analytics dashboards
 3. Advanced filtering and search
 4. Profile management
 
 ### Phase 4 (Polish - 1 week):
+
 1. Responsive design optimization
 2. Performance optimization
 3. Error handling
