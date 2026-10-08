@@ -2,7 +2,7 @@ model User {
   id                 String     @id @default(uuid())
   name               String
   email              String
-  password           String
+  password           String?
   emailVerified      Boolean    @default(false)
   role               Role       @default(TENANT)
   status             UserStatus @default(ACTIVE)
@@ -13,6 +13,7 @@ model User {
   updatedAt          DateTime   @updatedAt
   tenant            Tenant?
   refreshSessions   RefreshSession[]
+  authAccounts      AuthAccount[]
 
   @@unique([email])
   @@map("users")

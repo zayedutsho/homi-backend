@@ -7,6 +7,10 @@ import {
 import { getRedis } from "../../lib/redis";
 import { sendVerificationEmail } from "../../lib/email";
 import bcrypt from "bcryptjs";
+import { googleClient } from "../../lib/google";
+import type { TokenPayload } from "google-auth-library";
+import { z } from "zod";
+import type { Prisma, User } from "../../../generated/prisma/client";
 import { AppError } from "../../utils/AppError";
 import jwt, { type JwtPayload, type SignOptions } from "jsonwebtoken";
 import { Role, UserStatus } from "../../../generated/prisma/enums";
@@ -358,6 +362,13 @@ const loginUser = async (payload: ILoginUserPayload) => {
 	if (!user.emailVerified)
 		throw new AppError(403, "Please verify your email before logging in");
 
+	return issueLoginTokens(user, prisma);
+};
+
+const issueLoginTokens = async (
+	user: { id: string; name: string; email: string; role: Role },
+	database: Pick<Prisma.TransactionClient, "refreshSession">,
+) => {
 	validateTokenConfig();
 	const jwtPayload = {
 		userId: user.id,
@@ -376,7 +387,7 @@ const loginUser = async (payload: ILoginUserPayload) => {
 		config.jwt_refresh_expires_in as SignOptions["expiresIn"],
 	);
 	const refreshClaims = jwt.decode(refreshToken) as JwtPayload;
-	await prisma.refreshSession.create({
+	await database.refreshSession.create({
 		data: {
 			id: refreshClaims.jti as string,
 			userId: user.id,
@@ -386,6 +397,121 @@ const loginUser = async (payload: ILoginUserPayload) => {
 		},
 	});
 	return { accessToken, refreshToken };
+};
+
+const googleLogin = async (payload: { idToken: string }) => {
+	if (!config.google_client_id)
+		throw new AppError(503, "Google login is not configured");
+	let identity: TokenPayload | undefined;
+	try {
+		// Checks Google's signature, configured audience, allowed issuers and expiry.
+		const ticket = await googleClient.verifyIdToken({
+			idToken: payload.idToken,
+			audience: config.google_client_id,
+		});
+		identity = ticket.getPayload();
+	} catch {
+		throw new AppError(401, "Invalid or expired Google ID token");
+	}
+	if (
+		!identity ||
+		identity.aud !== config.google_client_id ||
+		!["accounts.google.com", "https://accounts.google.com"].includes(
+			identity.iss,
+		) ||
+		!Number.isFinite(identity.exp) ||
+		identity.exp <= Date.now() / 1000 ||
+		typeof identity.sub !== "string" ||
+		!identity.sub ||
+		identity.sub.length > 255
+	)
+		throw new AppError(401, "Invalid or expired Google ID token");
+	if (identity.email_verified !== true)
+		throw new AppError(403, "Google email must be verified before logging in");
+	const emailResult = z
+		.string()
+		.trim()
+		.toLowerCase()
+		.max(254)
+		.pipe(z.email())
+		.safeParse(identity.email);
+	if (!emailResult.success)
+		throw new AppError(401, "Google account must provide a valid email");
+	const email = emailResult.data;
+	const subject = identity.sub;
+	const name =
+		(typeof identity.name === "string" && identity.name.trim().slice(0, 100)) ||
+		"Homi user";
+	validateTokenConfig();
+	const conflictMessage =
+		"An account with this email already exists. Sign in with your password; Google linking requires a separate secure account-linking process.";
+	try {
+		return await prisma.$transaction(
+			async (transaction) => {
+				// Google's stable subject identifies returning users, even if their email changes.
+				const account = await transaction.authAccount.findUnique({
+					where: {
+						provider_providerAccountId: {
+							provider: "GOOGLE",
+							providerAccountId: subject,
+						},
+					},
+				});
+				let user: User | null;
+				if (account) {
+					await transaction.$queryRaw`SELECT "id" FROM "users" WHERE "id" = ${account.userId} FOR UPDATE`;
+					user = await transaction.user.findUnique({
+						where: { id: account.userId },
+					});
+					if (
+						!user ||
+						user.isDeleted ||
+						user.status !== UserStatus.ACTIVE ||
+						!user.emailVerified
+					)
+						throw new AppError(
+							403,
+							"Account is inactive or ineligible for Google login",
+						);
+				} else {
+					const existing = await transaction.user.findUnique({
+						where: { email },
+						select: { id: true },
+					});
+					if (existing) throw new AppError(409, conflictMessage);
+					user = await transaction.user.create({
+						data: {
+							name,
+							email,
+							password: null,
+							role: Role.TENANT,
+							emailVerified: true,
+							status: UserStatus.ACTIVE,
+							tenant: { create: { name, email } },
+							authAccounts: {
+								create: { provider: "GOOGLE", providerAccountId: subject },
+							},
+						},
+					});
+				}
+				// User, provider identity, tenant and hashed refresh session commit together.
+				return issueLoginTokens(user, transaction);
+			},
+			{ maxWait: 10000, timeout: 15000 },
+		);
+	} catch (error) {
+		if (
+			error &&
+			typeof error === "object" &&
+			"code" in error &&
+			error.code === "P2002"
+		)
+			throw new AppError(
+				409,
+				"Google account or email already registered. Retry Google sign-in; if the conflict remains, sign in with your password and request secure account linking.",
+			);
+		throw error;
+	}
 };
 
 const getMe = async (user: IRequestUser) => {
@@ -602,6 +728,7 @@ const logout = async (token?: string) => {
 };
 
 export const AuthService = {
+	googleLogin,
 	logout,
 	resendOtp,
 	verifyEmail,

@@ -817,6 +817,57 @@
           }
         }
       ]
+    },
+    {
+      "name": "Auth - Google login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"idToken\": \"{{googleIdToken}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/google",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "google"
+          ]
+        },
+        "description": "Use a fresh GIS ID token. Existing credential email conflicts return 409; no automatic linking. Verified Google users do not require Homi OTP."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Google login succeeded\", function () { pm.response.to.have.status(200); });",
+              "if (pm.response.code === 200) {",
+              "  const result = pm.response.json().data;",
+              "  pm.environment.set(\"accessToken\", result.accessToken);",
+              "  pm.environment.set(\"refreshToken\", result.refreshToken);",
+              "  pm.environment.unset(\"googleIdToken\");",
+              "}"
+            ]
+          }
+        }
+      ]
     }
   ]
 }

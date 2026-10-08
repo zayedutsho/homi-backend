@@ -39,3 +39,7 @@ export const loginSchema = z.strictObject({
 export const refreshTokenSchema = z.strictObject({
 	refreshToken: z.string().min(1).max(4096).optional(),
 });
+
+export const googleLoginSchema = z.strictObject({
+	idToken: z.string().min(1).max(8192),
+});

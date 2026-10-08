@@ -4,7 +4,7 @@ import { AppError } from "../utils/AppError";
 import { catchAsync } from "../utils/catchAsync";
 
 const otpRateLimit = (
-	action: "register" | "resend" | "login" | "refresh" | "logout",
+	action: "register" | "resend" | "login" | "refresh" | "logout" | "google",
 ) =>
 	catchAsync(async (req, res, next) => {
 		const client = await getRedis();
@@ -43,3 +43,4 @@ export const loginRateLimit = otpRateLimit("login");
 export const refreshRateLimit = otpRateLimit("refresh");
 
 export const logoutRateLimit = otpRateLimit("logout");
+export const googleRateLimit = otpRateLimit("google");

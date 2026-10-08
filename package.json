@@ -21,7 +21,9 @@
         "test:login": "tsx --test tests/login.test.ts",
         "test:me": "tsx --test tests/me.test.ts",
         "test:refresh-token": "tsx --test tests/refreshToken.test.ts",
-        "test:logout": "tsx --test --test-name-pattern=logout tests/refreshToken.test.ts"
+        "test:logout": "tsx --test --test-name-pattern=logout tests/refreshToken.test.ts",
+        "dev:google-test": "tsx scripts/google-test-server.ts",
+        "test:google": "tsx --test tests/googleLogin.test.ts"
     },
     "keywords": [],
     "author": "",

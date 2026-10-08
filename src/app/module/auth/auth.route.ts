@@ -9,6 +9,7 @@ import {
 	resendOtpSchema,
 	loginSchema,
 	refreshTokenSchema,
+	googleLoginSchema,
 } from "./auth.validation";
 import { validateRequest } from "../../middleware/validateRequest";
 import {
@@ -17,9 +18,16 @@ import {
 	loginRateLimit,
 	refreshRateLimit,
 	logoutRateLimit,
+	googleRateLimit,
 } from "../../middleware/registrationRateLimit";
 
 const router = Router();
+router.post(
+	"/google",
+	validateRequest(googleLoginSchema),
+	googleRateLimit,
+	AuthController.googleLogin,
+);
 router.post(
 	"/register",
 	validateRequest(registerSchema),

@@ -19,6 +19,27 @@ const registerUser = catchAsync(async (req: Request, res: Response) => {
 	});
 });
 
+const googleLogin = catchAsync(async (req: Request, res: Response) => {
+	const result = await AuthService.googleLogin(req.body);
+	for (const [name, token] of Object.entries(result)) {
+		res.cookie(name, token, {
+			httpOnly: true,
+			secure: config.node_env === "production",
+			sameSite: "lax",
+			maxAge: Math.max(
+				0,
+				((jwt.decode(token) as JwtPayload).exp ?? 0) * 1000 - Date.now(),
+			),
+		});
+	}
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Google login successful",
+		data: result,
+	});
+});
+
 const loginUser = catchAsync(async (req: Request, res: Response) => {
 	const payload = req.body;
 	const result = await AuthService.loginUser(payload);
@@ -148,6 +169,7 @@ const logout = catchAsync(async (req: Request, res: Response) => {
 });
 
 export const AuthController = {
+	googleLogin,
 	logout,
 	resendOtp,
 	verifyEmail,

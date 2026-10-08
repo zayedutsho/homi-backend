@@ -132,3 +132,15 @@ Final refresh verification: DONE — six live Neon integration/HTTP tests passed; 
 - Postman logout request/examples/token-variable cleanup added. No schema changes. Commit: NOT STARTED.
 
 Logout verification: DONE — two live Neon/HTTP tests passed, including rotation-family revocation, independent-login preservation, repeat logout, cookie clearing and malformed-body rejection. Temporary test users were cleaned up. TypeScript/build/targeted lint passed. Logout remains IN PROGRESS pending user Postman confirmation.
+
+User confirmation: logout Postman test PASSED. POST /api/v1/auth/logout is DONE. Next planned endpoint: Google authentication; configuration readiness checked before implementation.
+
+## Google authentication ? updated business rule
+
+- Implemented POST /api/v1/auth/google: genuine server-side verification; email_verified must be true; verified Google users skip Homi OTP. Credential registration still requires OTP.
+- New Google users are TENANT, emailVerified true (existing verification field), nullable password, linked AuthAccount by GOOGLE + stable sub. User/tenant/account/session created transactionally. Returning identities preserve stored roles/profile.
+- Existing email conflicts require secure linking, which remains a separate unimplemented endpoint. Inactive/deleted/unverified linked users are rejected.
+- Existing token issuance, refresh rotation, logout and authorization preserved. Documentation and Postman Google request updated.
+- IN PROGRESS: verification and user Postman confirmation. No further endpoint work until confirmation.
+
+Google verification: DONE ? 10 Google service/HTTP/cryptographic tests, two live database Google integration tests (including rollback), eight refresh/logout regressions, seven credential login tests and seven registration tests passed. Prisma schema validation/client generation, migration deployment, TypeScript, build and targeted lint passed. Live test users were cleaned up. Google identity claims were simulated in automated database tests; genuine browser-token Postman confirmation remains pending. No OTP or credentials were logged. Google endpoint remains IN PROGRESS only pending user testing confirmation.
