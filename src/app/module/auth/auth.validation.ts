@@ -24,3 +24,18 @@ export const verifyEmailSchema = z.strictObject({
 export const resendOtpSchema = z.strictObject({
 	email: z.string().trim().toLowerCase().max(254).pipe(z.email()),
 });
+
+export const loginSchema = z.strictObject({
+	email: z.string().trim().toLowerCase().max(254).pipe(z.email()),
+	password: z
+		.string()
+		.min(1)
+		.refine(
+			(value) => Buffer.byteLength(value, "utf8") <= 72,
+			"Password must not exceed 72 UTF-8 bytes",
+		),
+});
+
+export const refreshTokenSchema = z.strictObject({
+	refreshToken: z.string().min(1).max(4096).optional(),
+});

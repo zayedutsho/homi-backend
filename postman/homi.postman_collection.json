@@ -345,6 +345,478 @@
           "body": "{\n  \"success\": false,\n  \"message\": \"Please wait 60 seconds before requesting another code\",\n  \"errors\": []\n}"
         }
       ]
+    },
+    {
+      "name": "Auth - Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{registrationEmail}}\",\n  \"password\": \"{{registrationPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "login"
+          ]
+        },
+        "description": "Public verified-user login. Returns JWT access/refresh tokens; use accessToken as Bearer for protected routes. 401 invalid credentials, 403 unverified/inactive, 400 validation, 429 IP limit, 503 JWT configuration. Login stores a hashed RefreshSession. Refresh rotation rejects reused tokens and revokes the session family."
+      },
+      "response": [
+        {
+          "name": "200 - Tokens",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{registrationEmail}}\",\n  \"password\": \"{{registrationPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Public verified-user login. Returns JWT access/refresh tokens; use accessToken as Bearer for protected routes. 401 invalid credentials, 403 unverified/inactive, 400 validation, 429 IP limit, 503 JWT configuration. Hashed refresh sessions and rotation are pending the next authentication endpoint."
+          },
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"success\": true,\n  \"statusCode\": 200,\n  \"message\": \"User logged in successfully\",\n  \"data\": {\n    \"accessToken\": \"<access-token>\",\n    \"refreshToken\": \"<refresh-token>\"\n  }\n}"
+        },
+        {
+          "name": "401 - Invalid credentials",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{registrationEmail}}\",\n  \"password\": \"{{registrationPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Public verified-user login. Returns JWT access/refresh tokens; use accessToken as Bearer for protected routes. 401 invalid credentials, 403 unverified/inactive, 400 validation, 429 IP limit, 503 JWT configuration. Hashed refresh sessions and rotation are pending the next authentication endpoint."
+          },
+          "status": "Unauthorized",
+          "code": 401,
+          "body": "{\n  \"success\": false,\n  \"message\": \"Invalid email or password\",\n  \"errors\": []\n}"
+        }
+      ],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "  const data = pm.response.json().data;",
+              "  pm.environment.set(\"accessToken\", data.accessToken);",
+              "  pm.environment.set(\"refreshToken\", data.refreshToken);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth - Current user",
+      "request": {
+        "method": "GET",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/me",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "me"
+          ]
+        },
+        "description": "Current active verified user profile. Bearer access token or accessToken cookie; explicit Authorization header takes precedence. Current name/role/status come from PostgreSQL. No password/hash/tokens returned; deleted tenant profile returns null. 401 missing/invalid/expired token or missing user; 403 inactive/deleted/unverified account."
+      },
+      "response": [
+        {
+          "name": "200 - Profile",
+          "originalRequest": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Current active verified user profile. Bearer access token or accessToken cookie; explicit Authorization header takes precedence. Current name/role/status come from PostgreSQL. No password/hash/tokens returned; deleted tenant profile returns null. 401 missing/invalid/expired token or missing user; 403 inactive/deleted/unverified account."
+          },
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"success\": true,\n  \"statusCode\": 200,\n  \"message\": \"User profile fetched successfully\",\n  \"data\": {\n    \"id\": \"example-user-id\",\n    \"name\": \"Test Tenant\",\n    \"email\": \"your-email@example.com\",\n    \"role\": \"TENANT\",\n    \"emailVerified\": true,\n    \"status\": \"ACTIVE\",\n    \"createdAt\": \"<timestamp>\",\n    \"updatedAt\": \"<timestamp>\",\n    \"tenant\": {\n      \"id\": \"example-tenant-id\",\n      \"contactNumber\": null,\n      \"address\": null\n    }\n  }\n}"
+        },
+        {
+          "name": "401 - Missing token",
+          "originalRequest": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Current active verified user profile. Bearer access token or accessToken cookie; explicit Authorization header takes precedence. Current name/role/status come from PostgreSQL. No password/hash/tokens returned; deleted tenant profile returns null. 401 missing/invalid/expired token or missing user; 403 inactive/deleted/unverified account."
+          },
+          "status": "Unauthorized",
+          "code": 401,
+          "body": "{\n  \"success\": false,\n  \"message\": \"A valid Bearer access token is required\",\n  \"errors\": []\n}"
+        }
+      ]
+    },
+    {
+      "name": "Auth - Rotate refresh token",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/refresh-token",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "refresh-token"
+          ]
+        },
+        "description": "Public refresh rotation. Log in again after this feature to obtain a session-backed refresh token. Body token overrides cookie; {} allows cookie fallback. 200 issues replacements and revokes old session. Reusing old token returns 401 and revokes its session family, including the replacement. Concurrent reuse is treated as replay. 403 inactive account; 400 invalid body; 429 IP limit. For the replay test save an old token locally before collection automation overwrites refreshToken."
+      },
+      "response": [
+        {
+          "name": "200 - New tokens",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/refresh-token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "refresh-token"
+              ]
+            },
+            "description": "Public refresh rotation. Log in again after this feature to obtain a session-backed refresh token. Body token overrides cookie; {} allows cookie fallback. 200 issues replacements and revokes old session. Reusing old token returns 401 and revokes its session family, including the replacement. Concurrent reuse is treated as replay. 403 inactive account; 400 invalid body; 429 IP limit. For the replay test save an old token locally before collection automation overwrites refreshToken."
+          },
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"success\": true,\n  \"statusCode\": 200,\n  \"message\": \"New tokens generated successfully\",\n  \"data\": {\n    \"accessToken\": \"<new-access-token>\",\n    \"refreshToken\": \"<new-refresh-token>\"\n  }\n}"
+        },
+        {
+          "name": "401 - Reused token",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/refresh-token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "refresh-token"
+              ]
+            },
+            "description": "Public refresh rotation. Log in again after this feature to obtain a session-backed refresh token. Body token overrides cookie; {} allows cookie fallback. 200 issues replacements and revokes old session. Reusing old token returns 401 and revokes its session family, including the replacement. Concurrent reuse is treated as replay. 403 inactive account; 400 invalid body; 429 IP limit. For the replay test save an old token locally before collection automation overwrites refreshToken."
+          },
+          "status": "Unauthorized",
+          "code": 401,
+          "body": "{\n  \"success\": false,\n  \"message\": \"Refresh token already used. Please log in again.\",\n  \"errors\": []\n}"
+        }
+      ],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "  const data = pm.response.json().data;",
+              "  pm.environment.set(\"accessToken\", data.accessToken);",
+              "  pm.environment.set(\"refreshToken\", data.refreshToken);",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth - Logout",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/logout",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "logout"
+          ]
+        },
+        "description": "Logout the identified refresh family and clear auth cookies. Supply refreshToken in JSON or {} for cookie fallback. No access token required. Repeated/missing/invalid-token logout is idempotent 200; malformed JSON fields return 400. Other login families remain active. Already-issued access JWTs remain valid until expiry. Save the previous refresh token locally before logout if testing revocation; automation clears local token variables on success."
+      },
+      "response": [
+        {
+          "name": "200 - Logged out",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Logout the identified refresh family and clear auth cookies. Supply refreshToken in JSON or {} for cookie fallback. No access token required. Repeated/missing/invalid-token logout is idempotent 200; malformed JSON fields return 400. Other login families remain active. Already-issued access JWTs remain valid until expiry. Save the previous refresh token locally before logout if testing revocation; automation clears local token variables on success."
+          },
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"success\": true,\n  \"statusCode\": 200,\n  \"message\": \"Logged out successfully\",\n  \"data\": null\n}"
+        },
+        {
+          "name": "400 - Invalid body",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Logout the identified refresh family and clear auth cookies. Supply refreshToken in JSON or {} for cookie fallback. No access token required. Repeated/missing/invalid-token logout is idempotent 200; malformed JSON fields return 400. Other login families remain active. Already-issued access JWTs remain valid until expiry. Save the previous refresh token locally before logout if testing revocation; automation clears local token variables on success."
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "body": "{\n  \"success\": false,\n  \"message\": \"Validation failed\",\n  \"errors\": [\n    {\n      \"field\": \"refreshToken\",\n      \"message\": \"Expected a string\"\n    }\n  ]\n}"
+        }
+      ],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "  pm.environment.unset(\"accessToken\");",
+              "  pm.environment.unset(\"refreshToken\");",
+              "}"
+            ]
+          }
+        }
+      ]
     }
   ]
 }

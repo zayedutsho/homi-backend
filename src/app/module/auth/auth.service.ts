@@ -1,9 +1,14 @@
-import { randomInt, randomUUID } from "node:crypto";
+import {
+	randomInt,
+	randomUUID,
+	createHash,
+	timingSafeEqual,
+} from "node:crypto";
 import { getRedis } from "../../lib/redis";
 import { sendVerificationEmail } from "../../lib/email";
 import bcrypt from "bcryptjs";
 import { AppError } from "../../utils/AppError";
-import type { JwtPayload, SignOptions } from "jsonwebtoken";
+import jwt, { type JwtPayload, type SignOptions } from "jsonwebtoken";
 import { Role, UserStatus } from "../../../generated/prisma/enums";
 import config from "../../config";
 import { prisma } from "../../lib/prisma";
@@ -300,135 +305,304 @@ const verifyEmail = async (payload: { email: string; otp: string }) => {
 	};
 };
 
-const loginUser = async (payload: ILoginUserPayload) => {
-	const { password } = payload;
-	const email = payload.email.trim().toLowerCase();
+const validateTokenConfig = () => {
+	const secrets = [config.jwt_access_secret, config.jwt_refresh_secret];
+	if (
+		secrets.some(
+			(secret) =>
+				!secret || secret.length < 32 || secret.startsWith("replace-"),
+		) ||
+		secrets[0] === secrets[1]
+	) {
+		throw new AppError(
+			503,
+			"Configure distinct JWT secrets of at least 32 characters",
+		);
+	}
+	const tokenLifetime = /^[1-9]\d*(s|m|h|d)$/;
+	if (
+		!tokenLifetime.test(config.jwt_access_expires_in || "") ||
+		!tokenLifetime.test(config.jwt_refresh_expires_in || "")
+	) {
+		throw new AppError(
+			503,
+			"Configure JWT lifetimes using seconds, minutes, hours or days, such as 15m and 7d",
+		);
+	}
+};
 
+const loginUser = async (payload: ILoginUserPayload) => {
+	const email = payload.email.trim().toLowerCase();
 	const user = await prisma.user.findUnique({
 		where: { email },
+		select: {
+			id: true,
+			name: true,
+			email: true,
+			password: true,
+			role: true,
+			emailVerified: true,
+			status: true,
+			isDeleted: true,
+		},
 	});
-
-	if (!user) {
-		throw new Error("User not found");
+	// Use the same error for an unknown email and an incorrect password.
+	if (
+		!user?.password ||
+		!(await bcrypt.compare(payload.password, user.password))
+	) {
+		throw new AppError(401, "Invalid email or password");
 	}
-
-	if (user.status === UserStatus.BLOCKED) {
-		throw new Error("User is blocked");
-	}
-
-	if (user.isDeleted || user.status === UserStatus.DELETED) {
-		throw new Error("User is deleted");
-	}
-
-	const isPasswordMatched = await bcrypt.compare(password, user.password);
-
-	if (!isPasswordMatched) {
-		throw new Error("Invalid credentials");
-	}
-
-	if (!user.emailVerified) {
+	if (user.status !== UserStatus.ACTIVE || user.isDeleted)
+		throw new AppError(403, "Account is inactive");
+	if (!user.emailVerified)
 		throw new AppError(403, "Please verify your email before logging in");
-	}
 
+	validateTokenConfig();
 	const jwtPayload = {
 		userId: user.id,
 		name: user.name,
 		email: user.email,
 		role: user.role,
 	};
-
 	const accessToken = jwtUtils.createToken(
 		jwtPayload,
 		config.jwt_access_secret,
-		config.jwt_access_expires_in as SignOptions,
+		config.jwt_access_expires_in as SignOptions["expiresIn"],
 	);
-
 	const refreshToken = jwtUtils.createToken(
-		jwtPayload,
+		{ ...jwtPayload, jti: randomUUID() },
 		config.jwt_refresh_secret,
-		config.jwt_refresh_expires_in as SignOptions,
+		config.jwt_refresh_expires_in as SignOptions["expiresIn"],
 	);
-
-	return {
-		accessToken,
-		refreshToken,
-	};
+	const refreshClaims = jwt.decode(refreshToken) as JwtPayload;
+	await prisma.refreshSession.create({
+		data: {
+			id: refreshClaims.jti as string,
+			userId: user.id,
+			familyId: randomUUID(),
+			tokenHash: createHash("sha256").update(refreshToken).digest("hex"),
+			expiresAt: new Date((refreshClaims.exp as number) * 1000),
+		},
+	});
+	return { accessToken, refreshToken };
 };
 
 const getMe = async (user: IRequestUser) => {
-	const isUserExists = await prisma.user.findUnique({
-		where: {
-			id: user.userId,
-		},
-		include: {
-			tenant: true,
-		},
-		omit: {
-			password: true,
+	const profile = await prisma.user.findUnique({
+		where: { id: user.userId },
+		select: {
+			id: true,
+			name: true,
+			email: true,
+			role: true,
+			emailVerified: true,
+			status: true,
+			isDeleted: true,
+			createdAt: true,
+			updatedAt: true,
+			tenant: {
+				select: {
+					id: true,
+					contactNumber: true,
+					address: true,
+					isDeleted: true,
+				},
+			},
 		},
 	});
-
-	if (!isUserExists) {
-		throw new Error("User not found");
+	if (!profile) throw new AppError(401, "User not found. Please log in again.");
+	// Recheck eligibility in case account status changed after the middleware query.
+	if (
+		profile.status !== UserStatus.ACTIVE ||
+		profile.isDeleted ||
+		!profile.emailVerified
+	) {
+		throw new AppError(403, "Your account must be active and email verified.");
 	}
-
-	return isUserExists;
+	const { isDeleted, tenant, ...safeProfile } = profile;
+	return {
+		...safeProfile,
+		tenant:
+			tenant && !tenant.isDeleted
+				? {
+						id: tenant.id,
+						contactNumber: tenant.contactNumber,
+						address: tenant.address,
+					}
+				: null,
+	};
 };
 
 const refreshToken = async (token: string) => {
-	const verifiedRefreshToken = jwtUtils.verifyToken(
-		token,
-		config.jwt_refresh_secret,
-	);
-
-	if (!verifiedRefreshToken.success || !verifiedRefreshToken.data) {
-		throw new Error(
-			config.node_env === "development"
-				? verifiedRefreshToken.error
-				: "Invalid refresh token",
-		);
+	const verified = jwtUtils.verifyToken(token, config.jwt_refresh_secret);
+	if (
+		!verified.success ||
+		!verified.data ||
+		typeof verified.data === "string" ||
+		typeof verified.data.userId !== "string" ||
+		typeof verified.data.jti !== "string" ||
+		typeof verified.data.exp !== "number"
+	) {
+		throw new AppError(401, "Invalid or expired refresh token");
 	}
-
-	const data = verifiedRefreshToken.data as JwtPayload;
-
-	const user = await prisma.user.findUnique({
-		where: { id: data.userId },
-	});
-
-	if (!user || user.isDeleted || user.status !== UserStatus.ACTIVE) {
-		throw new Error("User is inactive or not found");
-	}
-
-	if (!user.emailVerified) {
-		throw new AppError(403, "Please verify your email before logging in");
-	}
-
-	const jwtPayload = {
-		userId: user.id,
-		name: user.name,
-		email: user.email,
-		role: user.role,
-	};
-
-	const accessToken = jwtUtils.createToken(
-		jwtPayload,
-		config.jwt_access_secret,
-		config.jwt_access_expires_in as SignOptions,
+	validateTokenConfig();
+	const claims = verified.data;
+	const tokenHash = createHash("sha256").update(token).digest("hex");
+	// Return failures from the transaction so replay revocation is committed, not rolled back.
+	const result = await prisma.$transaction(
+		async (transaction) => {
+			// Serialize refreshes for this user, including replay checks against older sessions.
+			await transaction.$queryRaw`SELECT "id" FROM "users" WHERE "id" = ${claims.userId} FOR UPDATE`;
+			const session = await transaction.refreshSession.findUnique({
+				where: { id: claims.jti },
+				include: {
+					user: {
+						select: {
+							id: true,
+							name: true,
+							email: true,
+							role: true,
+							status: true,
+							isDeleted: true,
+							emailVerified: true,
+						},
+					},
+				},
+			});
+			if (
+				!session ||
+				session.userId !== claims.userId ||
+				session.tokenHash.length !== tokenHash.length ||
+				!timingSafeEqual(Buffer.from(session.tokenHash), Buffer.from(tokenHash))
+			)
+				return { error: "Invalid or expired refresh token", status: 401 };
+			if (session.revokedAt) {
+				await transaction.refreshSession.updateMany({
+					where: { familyId: session.familyId, revokedAt: null },
+					data: { revokedAt: new Date() },
+				});
+				return {
+					error: "Refresh token already used. Please log in again.",
+					status: 401,
+				};
+			}
+			if (session.expiresAt <= new Date())
+				return { error: "Invalid or expired refresh token", status: 401 };
+			const user = session.user;
+			if (
+				user.status !== UserStatus.ACTIVE ||
+				user.isDeleted ||
+				!user.emailVerified
+			) {
+				await transaction.refreshSession.updateMany({
+					where: { userId: user.id, revokedAt: null },
+					data: { revokedAt: new Date() },
+				});
+				return {
+					error: "Your account must be active and email verified",
+					status: 403,
+				};
+			}
+			// Only one concurrent request can consume this session.
+			const consumed = await transaction.refreshSession.updateMany({
+				where: {
+					id: session.id,
+					revokedAt: null,
+					expiresAt: { gt: new Date() },
+				},
+				data: { revokedAt: new Date() },
+			});
+			if (consumed.count !== 1) {
+				await transaction.refreshSession.updateMany({
+					where: { familyId: session.familyId, revokedAt: null },
+					data: { revokedAt: new Date() },
+				});
+				return {
+					error: "Refresh token already used. Please log in again.",
+					status: 401,
+				};
+			}
+			const payload = {
+				userId: user.id,
+				name: user.name,
+				email: user.email,
+				role: user.role,
+			};
+			const accessToken = jwtUtils.createToken(
+				payload,
+				config.jwt_access_secret,
+				config.jwt_access_expires_in as SignOptions["expiresIn"],
+			);
+			const sessionId = randomUUID();
+			const refreshToken = jwtUtils.createToken(
+				{ ...payload, jti: sessionId },
+				config.jwt_refresh_secret,
+				config.jwt_refresh_expires_in as SignOptions["expiresIn"],
+			);
+			const nextClaims = jwt.decode(refreshToken) as JwtPayload;
+			await transaction.refreshSession.create({
+				data: {
+					id: sessionId,
+					userId: user.id,
+					familyId: session.familyId,
+					tokenHash: createHash("sha256").update(refreshToken).digest("hex"),
+					expiresAt: new Date((nextClaims.exp as number) * 1000),
+				},
+			});
+			return { accessToken, refreshToken };
+		},
+		{ maxWait: 10000, timeout: 15000 },
 	);
+	if ("error" in result)
+		throw new AppError(result.status as number, result.error as string);
+	return result;
+};
 
-	const refreshToken = jwtUtils.createToken(
-		jwtPayload,
-		config.jwt_refresh_secret,
-		config.jwt_refresh_expires_in as SignOptions,
+const logout = async (token?: string) => {
+	if (!token) return;
+	let claims: JwtPayload;
+	try {
+		// An expired but correctly signed token can still identify a session to revoke.
+		const decoded = jwt.verify(token, config.jwt_refresh_secret, {
+			algorithms: ["HS256"],
+			ignoreExpiration: true,
+		});
+		if (
+			typeof decoded === "string" ||
+			typeof decoded.userId !== "string" ||
+			typeof decoded.jti !== "string"
+		)
+			return;
+		claims = decoded;
+	} catch {
+		return;
+	}
+	const tokenHash = createHash("sha256").update(token).digest("hex");
+	await prisma.$transaction(
+		async (transaction) => {
+			await transaction.$queryRaw`SELECT "id" FROM "users" WHERE "id" = ${claims.userId} FOR UPDATE`;
+			const session = await transaction.refreshSession.findUnique({
+				where: { id: claims.jti },
+			});
+			if (
+				!session ||
+				session.userId !== claims.userId ||
+				session.tokenHash.length !== tokenHash.length ||
+				!timingSafeEqual(Buffer.from(session.tokenHash), Buffer.from(tokenHash))
+			)
+				return;
+			await transaction.refreshSession.updateMany({
+				where: { familyId: session.familyId, revokedAt: null },
+				data: { revokedAt: new Date() },
+			});
+		},
+		{ maxWait: 10000, timeout: 15000 },
 	);
-
-	return {
-		accessToken,
-		refreshToken,
-	};
 };
 
 export const AuthService = {
+	logout,
 	resendOtp,
 	verifyEmail,
 	registerUser,

@@ -1,3 +1,6 @@
+import { AppError } from "../../utils/AppError";
+import jwt, { type JwtPayload } from "jsonwebtoken";
+import config from "../../config";
 import type { Request, Response } from "express";
 import httpStatus from "http-status";
 import { catchAsync } from "../../utils/catchAsync";
@@ -23,15 +26,21 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
 
 	res.cookie("accessToken", accessToken, {
 		httpOnly: true,
-		secure: false,
-		sameSite: "none",
-		maxAge: 1000 * 60 * 60 * 24, // 24 hour or 1 day
+		secure: config.node_env === "production",
+		sameSite: "lax",
+		maxAge: Math.max(
+			0,
+			((jwt.decode(accessToken) as JwtPayload).exp ?? 0) * 1000 - Date.now(),
+		),
 	});
 	res.cookie("refreshToken", refreshToken, {
 		httpOnly: true,
-		secure: false,
-		sameSite: "none",
-		maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+		secure: config.node_env === "production",
+		sameSite: "lax",
+		maxAge: Math.max(
+			0,
+			((jwt.decode(refreshToken) as JwtPayload).exp ?? 0) * 1000 - Date.now(),
+		),
 	});
 
 	sendResponse(res, {
@@ -62,23 +71,30 @@ const getMe = catchAsync(async (req: Request, res: Response) => {
 });
 
 const refreshToken = catchAsync(async (req: Request, res: Response) => {
-	if (!req.cookies.refreshToken) {
-		throw new Error("Refresh token is missing");
-	}
-	const result = await AuthService.refreshToken(req.cookies.refreshToken);
+	const token = req.body.refreshToken ?? req.cookies?.refreshToken;
+	if (!token || typeof token !== "string")
+		throw new AppError(401, "Refresh token is required");
+	const result = await AuthService.refreshToken(token);
 	const { accessToken, refreshToken: newRefreshToken } = result;
 
 	res.cookie("accessToken", accessToken, {
 		httpOnly: true,
-		secure: false,
-		sameSite: "none",
-		maxAge: 1000 * 60 * 60 * 24, // 24 hour or 1 day
+		secure: config.node_env === "production",
+		sameSite: "lax",
+		maxAge: Math.max(
+			0,
+			((jwt.decode(accessToken) as JwtPayload).exp ?? 0) * 1000 - Date.now(),
+		),
 	});
 	res.cookie("refreshToken", newRefreshToken, {
 		httpOnly: true,
-		secure: false,
-		sameSite: "none",
-		maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+		secure: config.node_env === "production",
+		sameSite: "lax",
+		maxAge: Math.max(
+			0,
+			((jwt.decode(newRefreshToken) as JwtPayload).exp ?? 0) * 1000 -
+				Date.now(),
+		),
 	});
 
 	sendResponse(res, {
@@ -112,7 +128,27 @@ const resendOtp = catchAsync(async (req: Request, res: Response) => {
 	});
 });
 
+const logout = catchAsync(async (req: Request, res: Response) => {
+	const token = req.body.refreshToken ?? req.cookies?.refreshToken;
+	await AuthService.logout(typeof token === "string" ? token : undefined);
+	const cookieOptions = {
+		httpOnly: true,
+		secure: config.node_env === "production",
+		sameSite: "lax" as const,
+		path: "/",
+	};
+	res.clearCookie("accessToken", cookieOptions);
+	res.clearCookie("refreshToken", cookieOptions);
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Logged out successfully",
+		data: null,
+	});
+});
+
 export const AuthController = {
+	logout,
 	resendOtp,
 	verifyEmail,
 	registerUser,

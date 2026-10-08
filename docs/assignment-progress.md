@@ -89,3 +89,46 @@ Verification debugging: read-only check confirmed the original test account is a
 - DONE: replacement hashed OTP, attempts reset, 600-second TTL, branded SMTP email, 60-second Redis cooldown, separate IP rate counter, generic response for ineligible accounts, request-specific failure cleanup.
 - DONE: TypeScript/build/targeted lint; four resend tests against isolated real Redis keys and stubbed PostgreSQL/SMTP; seven registration and five verification regression tests. No real user code changed by tests.
 - DONE: Postman examples. Commit for resend: NOT STARTED.
+
+User Postman confirmation: resend OTP returned 200, followed by successful verification of the previously unverified test account. Registration, verification and resend OTP are DONE. Git push confirmation is pending; login work has not started.
+
+## Credential login
+
+- User confirmed verification/resend success and Git push completion.
+- IN PROGRESS: POST /api/v1/auth/login awaiting Postman confirmation.
+- DONE: email/password Zod validation; generic 401 invalid credentials; 403 unverified/inactive/deleted; access/refresh JWTs; configured expiry and distinct secrets validation; separate login rate limit; secure production cookies with correct expiry.
+- DONE: seven login tests (stubbed database/Redis) and seven registration regression tests; build and TypeScript checks. Postman login request/examples and token capture added.
+- NOT STARTED: hashed RefreshSession storage, refresh rotation, revocation and logout. Current JWT issuance is not a complete session-management system.
+- Database changes: none for login. Placeholder local JWT secrets replaced with random distinct values in ignored .env; restart backend to load them.
+- Commit: NOT STARTED for login.
+
+## Current user profile
+
+- DONE: user supplied successful credential-login response. Token values are not recorded in documentation.
+- IN PROGRESS: GET /api/v1/auth/me awaiting Postman confirmation.
+- DONE: strict Bearer parsing with cookie fallback, header precedence, signature/expiry checks, account status checks, database-authoritative roles/name, explicit safe User/Tenant selects and deleted-profile filtering.
+- DONE: TypeScript/build/targeted lint, actual Express HTTP test covering valid/invalid/expired tokens and inactive accounts with stubbed database reads; seven login regressions.
+- DONE: Postman profile request/examples. Database changes: none. Commit: NOT STARTED.
+- Next planned auth endpoint: refresh rotation with hashed sessions.
+
+## Refresh-token rotation
+
+- DONE: user supplied successful current-user Postman response.
+- IN PROGRESS: POST /api/v1/auth/refresh-token awaiting final integration checks/Postman.
+- DONE: RefreshSession schema and additive migration applied to Neon; generated client and Prisma validation. User 1:N RefreshSession stores only tokenHash, family ID, expiry and revocation timestamp.
+- DONE: login creates sessions; refresh verifies JWT/hash/account and conditionally consumes the old session then inserts replacement within a database transaction. Replay commits revocation of the family. Cookie/body support, input validation and IP limit included.
+- Legacy refresh JWTs without a database session require a fresh login. Access JWTs remain valid until expiry; immediate access-token session revocation is not implemented. Logout remains NOT STARTED.
+- DONE: Postman refresh request/examples/token capture. Commit: NOT STARTED.
+
+Refresh integration testing: row locking and bounded transaction waits fixed the concurrent-refresh issue found on Neon. Live database tests verify hash storage, replay-family revocation, one concurrent winner, expiry/account rejection and rollback. Temporary test users/sessions are deleted by test cleanup. HTTP body/cookie checks are also being verified.
+
+Final refresh verification: DONE — six live Neon integration/HTTP tests passed; seven login and one profile regression tests passed. Prisma validation/client generation, additive migration deployment, TypeScript, build and targeted lint passed. Refresh endpoint remains IN PROGRESS only pending the user's Postman confirmation. No real user tokens or session hashes were printed.
+
+## Logout
+
+- DONE: user supplied refresh rotation success and expected 401 on replay. Refresh Postman checks confirmed.
+- IN PROGRESS: POST /api/v1/auth/logout awaiting integration and Postman confirmation.
+- Implemented: revoke the identified refresh family, clear auth cookies, body/cookie support, Zod validation/IP limit, safe idempotent logout and user row locking shared with refresh. Other login families remain active. Access JWTs remain valid until expiry.
+- Postman logout request/examples/token-variable cleanup added. No schema changes. Commit: NOT STARTED.
+
+Logout verification: DONE — two live Neon/HTTP tests passed, including rotation-family revocation, independent-login preservation, repeat logout, cookie clearing and malformed-body rejection. Temporary test users were cleaned up. TypeScript/build/targeted lint passed. Logout remains IN PROGRESS pending user Postman confirmation.

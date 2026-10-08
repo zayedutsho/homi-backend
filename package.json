@@ -17,7 +17,11 @@
         "check:registration-connections": "tsx scripts/check-registration-connections.ts",
         "test:email": "tsx --test tests/emailTemplates.test.ts",
         "test:verify-email": "tsx --test tests/verifyEmail.test.ts",
-        "test:resend-otp": "tsx --test tests/resendOtp.test.ts"
+        "test:resend-otp": "tsx --test tests/resendOtp.test.ts",
+        "test:login": "tsx --test tests/login.test.ts",
+        "test:me": "tsx --test tests/me.test.ts",
+        "test:refresh-token": "tsx --test tests/refreshToken.test.ts",
+        "test:logout": "tsx --test --test-name-pattern=logout tests/refreshToken.test.ts"
     },
     "keywords": [],
     "author": "",

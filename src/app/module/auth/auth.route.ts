@@ -7,11 +7,16 @@ import {
 	registerSchema,
 	verifyEmailSchema,
 	resendOtpSchema,
+	loginSchema,
+	refreshTokenSchema,
 } from "./auth.validation";
 import { validateRequest } from "../../middleware/validateRequest";
 import {
 	registrationRateLimit,
 	resendOtpRateLimit,
+	loginRateLimit,
+	refreshRateLimit,
+	logoutRateLimit,
 } from "../../middleware/registrationRateLimit";
 
 const router = Router();
@@ -32,11 +37,27 @@ router.post(
 	resendOtpRateLimit,
 	AuthController.resendOtp,
 );
-router.post("/login", AuthController.loginUser);
+router.post(
+	"/login",
+	validateRequest(loginSchema),
+	loginRateLimit,
+	AuthController.loginUser,
+);
 router.get(
 	"/me",
 	auth(Role.ADMIN, Role.OWNER, Role.TENANT),
 	AuthController.getMe,
 );
-router.post("/refresh-token", AuthController.refreshToken);
+router.post(
+	"/refresh-token",
+	validateRequest(refreshTokenSchema),
+	refreshRateLimit,
+	AuthController.refreshToken,
+);
+router.post(
+	"/logout",
+	validateRequest(refreshTokenSchema),
+	logoutRateLimit,
+	AuthController.logout,
+);
 export const AuthRoutes = router;
