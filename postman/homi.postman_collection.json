@@ -999,6 +999,151 @@
           "body": "{\n  \"success\": false,\n  \"message\": \"Validation failed\",\n  \"errors\": [\n    {\n      \"field\": \"email\",\n      \"message\": \"Invalid email address\"\n    }\n  ]\n}"
         }
       ]
+    },
+    {
+      "name": "Auth - Verify reset OTP",
+      "request": {
+        "method": "POST",
+        "auth": {
+          "type": "noauth"
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{recoveryEmail}}\",\n  \"otp\": \"{{resetOtp}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/verify-reset-otp",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "verify-reset-otp"
+          ]
+        },
+        "description": "Use latest password recovery OTP as a string. Single-use verification returns an opaque reset token valid for 300 seconds; no login tokens or password change."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "  pm.environment.set(\"resetToken\", pm.response.json().data.resetToken);",
+              "  pm.environment.unset(\"resetOtp\");",
+              "}"
+            ]
+          }
+        }
+      ],
+      "response": [
+        {
+          "name": "Reset code verified",
+          "originalRequest": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{recoveryEmail}}\",\n  \"otp\": \"{{resetOtp}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/verify-reset-otp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "verify-reset-otp"
+              ]
+            },
+            "description": "Use latest password recovery OTP as a string. Single-use verification returns an opaque reset token valid for 300 seconds; no login tokens or password change."
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"success\": true,\n  \"statusCode\": 200,\n  \"message\": \"Password reset code verified successfully\",\n  \"data\": {\n    \"resetToken\": \"OPAQUE_RESET_TOKEN\",\n    \"resetTokenExpiresInSeconds\": 300\n  }\n}"
+        },
+        {
+          "name": "Invalid or replayed code",
+          "originalRequest": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{recoveryEmail}}\",\n  \"otp\": \"{{resetOtp}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/verify-reset-otp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "verify-reset-otp"
+              ]
+            },
+            "description": "Use latest password recovery OTP as a string. Single-use verification returns an opaque reset token valid for 300 seconds; no login tokens or password change."
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"success\": false,\n  \"message\": \"Invalid or expired password reset code\",\n  \"errors\": []\n}"
+        }
+      ]
     }
   ]
 }

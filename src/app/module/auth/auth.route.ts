@@ -11,6 +11,7 @@ import {
 	refreshTokenSchema,
 	googleLoginSchema,
 	forgotPasswordSchema,
+	verifyResetOtpSchema,
 } from "./auth.validation";
 import { validateRequest } from "../../middleware/validateRequest";
 import {
@@ -21,9 +22,16 @@ import {
 	logoutRateLimit,
 	googleRateLimit,
 	forgotPasswordRateLimit,
+	verifyResetOtpRateLimit,
 } from "../../middleware/registrationRateLimit";
 
 const router = Router();
+router.post(
+	"/verify-reset-otp",
+	validateRequest(verifyResetOtpSchema),
+	verifyResetOtpRateLimit,
+	AuthController.verifyResetOtp,
+);
 router.post(
 	"/forgot-password",
 	validateRequest(forgotPasswordSchema),

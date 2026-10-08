@@ -24,7 +24,8 @@
         "test:logout": "tsx --test --test-name-pattern=logout tests/refreshToken.test.ts",
         "dev:google-test": "tsx scripts/google-test-server.ts",
         "test:google": "tsx --test tests/googleLogin.test.ts",
-        "test:forgot-password": "tsx --test tests/forgotPassword.test.ts"
+        "test:forgot-password": "tsx --test tests/forgotPassword.test.ts",
+        "test:verify-reset-otp": "tsx --test tests/verifyResetOtp.test.ts"
     },
     "keywords": [],
     "author": "",

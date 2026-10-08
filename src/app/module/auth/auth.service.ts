@@ -1,6 +1,7 @@
 import {
 	randomInt,
 	randomUUID,
+	randomBytes,
 	createHash,
 	timingSafeEqual,
 } from "node:crypto";
@@ -301,6 +302,100 @@ const forgotPassword = async (payload: { email: string }) => {
 		console.error("Password recovery delivery failed; request cleaned up");
 		return response;
 	}
+};
+
+const verifyResetOtp = async (payload: { email: string; otp: string }) => {
+	const email = payload.email.trim().toLowerCase();
+	const invalidCode = "Invalid or expired password reset code";
+	const user = await prisma.user.findUnique({
+		where: { email },
+		select: {
+			id: true,
+			password: true,
+			emailVerified: true,
+			status: true,
+			isDeleted: true,
+		},
+	});
+	if (
+		!user?.password ||
+		!user.emailVerified ||
+		user.status !== UserStatus.ACTIVE ||
+		user.isDeleted
+	)
+		throw new AppError(400, invalidCode);
+	const client = await getRedis();
+	const otpKey = `homi:otp:PASSWORD_RESET:${user.id}`;
+	let record: string;
+	try {
+		record = String(
+			await client.eval(
+				`
+   local value = redis.call('GET', KEYS[1])
+   if not value then return 'EXPIRED' end
+   local otp = cjson.decode(value)
+   if otp.purpose ~= 'PASSWORD_RESET' or otp.userId ~= ARGV[1] then return 'EXPIRED' end
+   if (otp.attempts or 0) >= 5 then return 'LIMIT' end
+   otp.attempts = (otp.attempts or 0) + 1
+   local updated = cjson.encode(otp)
+   redis.call('SET', KEYS[1], updated, 'KEEPTTL')
+   return updated
+  `,
+				{ keys: [otpKey], arguments: [user.id] },
+			),
+		);
+	} catch {
+		throw new AppError(503, "Password recovery storage is unavailable");
+	}
+	if (record === "EXPIRED") throw new AppError(400, invalidCode);
+	if (record === "LIMIT")
+		throw new AppError(429, "Too many reset OTP attempts. Request a new code.");
+	const stored = JSON.parse(record) as { hash: string };
+	if (!(await bcrypt.compare(payload.otp, stored.hash)))
+		throw new AppError(400, invalidCode);
+
+	// Opaque reset tokens cannot be used as access or refresh JWTs.
+	const resetToken = randomBytes(32).toString("hex");
+	const tokenHash = createHash("sha256").update(resetToken).digest("hex");
+	const resetTokenExpiresInSeconds = 300;
+	const grantKey = `homi:password-reset:grant:${tokenHash}`;
+	const grant = JSON.stringify({
+		userId: user.id,
+		purpose: "PASSWORD_RESET",
+		passwordFingerprint: createHash("sha256")
+			.update(user.password)
+			.digest("hex"),
+	});
+	let consumed: number;
+	try {
+		// Grant creation and OTP consumption are atomic: one concurrent request wins.
+		consumed = Number(
+			await client.eval(
+				`
+   local value = redis.call('GET', KEYS[1])
+   if not value then return 0 end
+   local otp = cjson.decode(value)
+   if otp.hash ~= ARGV[1] or otp.userId ~= ARGV[2] or otp.purpose ~= 'PASSWORD_RESET' then return 0 end
+   if not redis.call('SET', KEYS[2], ARGV[3], 'NX', 'EX', ARGV[4]) then return 0 end
+   redis.call('DEL', KEYS[1])
+   return 1
+  `,
+				{
+					keys: [otpKey, grantKey],
+					arguments: [
+						stored.hash,
+						user.id,
+						grant,
+						String(resetTokenExpiresInSeconds),
+					],
+				},
+			),
+		);
+	} catch {
+		throw new AppError(503, "Password recovery storage is unavailable");
+	}
+	if (consumed !== 1) throw new AppError(400, invalidCode);
+	return { resetToken, resetTokenExpiresInSeconds };
 };
 
 const verifyEmail = async (payload: { email: string; otp: string }) => {
@@ -820,6 +915,7 @@ const logout = async (token?: string) => {
 };
 
 export const AuthService = {
+	verifyResetOtp,
 	forgotPassword,
 	googleLogin,
 	logout,

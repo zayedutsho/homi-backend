@@ -29,6 +29,11 @@ export const forgotPasswordSchema = z.strictObject({
 	email: z.string().trim().toLowerCase().max(254).pipe(z.email()),
 });
 
+export const verifyResetOtpSchema = z.strictObject({
+	email: z.string().trim().toLowerCase().max(254).pipe(z.email()),
+	otp: z.string().regex(/^\d{6}$/, "OTP must be six digits"),
+});
+
 export const loginSchema = z.strictObject({
 	email: z.string().trim().toLowerCase().max(254).pipe(z.email()),
 	password: z

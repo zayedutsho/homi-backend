@@ -11,7 +11,8 @@ const otpRateLimit = (
 		| "refresh"
 		| "logout"
 		| "google"
-		| "forgot",
+		| "forgot"
+		| "verify-reset",
 ) =>
 	catchAsync(async (req, res, next) => {
 		const client = await getRedis();
@@ -52,3 +53,4 @@ export const refreshRateLimit = otpRateLimit("refresh");
 export const logoutRateLimit = otpRateLimit("logout");
 export const googleRateLimit = otpRateLimit("google");
 export const forgotPasswordRateLimit = otpRateLimit("forgot");
+export const verifyResetOtpRateLimit = otpRateLimit("verify-reset");

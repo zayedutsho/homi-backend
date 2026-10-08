@@ -30,6 +30,16 @@ const forgotPassword = catchAsync(async (req: Request, res: Response) => {
 	});
 });
 
+const verifyResetOtp = catchAsync(async (req: Request, res: Response) => {
+	const result = await AuthService.verifyResetOtp(req.body);
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Password reset code verified successfully",
+		data: result,
+	});
+});
+
 const googleLogin = catchAsync(async (req: Request, res: Response) => {
 	const result = await AuthService.googleLogin(req.body);
 	for (const [name, token] of Object.entries(result)) {
@@ -180,6 +190,7 @@ const logout = catchAsync(async (req: Request, res: Response) => {
 });
 
 export const AuthController = {
+	verifyResetOtp,
 	forgotPassword,
 	googleLogin,
 	logout,

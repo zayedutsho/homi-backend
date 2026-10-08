@@ -4,7 +4,7 @@
 
 | Endpoint | Implementation | Local verification | Postman | Commit |
 | --- | --- | --- | --- | --- |
-| POST /api/v1/auth/forgot-password | IN PROGRESS | DONE: 9 Redis/HTTP tests, regressions, typecheck/build/lint | Pending user test | NOT STARTED |
+| POST /api/v1/auth/verify-reset-otp | IN PROGRESS | DONE: 11 Redis/HTTP tests, 14 regressions, typecheck/build/lint | Pending user test | NOT STARTED |
 
 Current status: registration, email verification/resend, credential login, profile, refresh rotation, logout and Google login are DONE with user Postman confirmation. Google commit/push reported complete. Forgot-password is the active endpoint; reset verification and reset-password remain NOT STARTED. OTP storage uses Redis per user instruction. Earlier entries below retain chronological evidence.
 
@@ -158,3 +158,14 @@ Google authentication: DONE. User confirmed genuine Google login success, matchi
 Forgot-password verification: DONE ? nine isolated real Redis/HTTP tests, five email template tests, seven registration and ten Google regression tests passed. TypeScript, build and targeted lint passed. Database reads/SMTP are mocked in recovery tests; no real email sent and no real user OTP modified. Inbox delivery remains pending user Postman confirmation. Reset verification/password reset remain NOT STARTED.
 
 Forgot-password: DONE. User confirmed reset OTP inbox delivery for a credential account and the expected invalid-email Validation failed response with email field error. Google-only account exclusion was verified using read-only eligibility checks; SMTP authentication passed. No OTP values recorded. Awaiting user authorization before starting verify-reset-otp.
+
+## Verify reset OTP
+
+- Forgot-password user testing confirmed DONE; user authorized next endpoint.
+- IN PROGRESS: POST /api/v1/auth/verify-reset-otp pending final verification and Postman confirmation.
+- Implemented: eligible credential User lookup, purpose/expiry checks, atomic five-attempt limit, bcrypt comparison, atomic one-time OTP consumption and five-minute hashed opaque reset grant, independent IP rate limit, Zod and standard responses. No password/session changes, schema changes or new env variables.
+- Documentation/Postman request/examples/resetOtp/resetToken placeholders updated. reset-password NOT STARTED; commit NOT STARTED.
+
+Verify-reset-otp local verification: DONE ? 11 new tests plus 9 forgot-password and 5 registration-verification regressions passed using isolated actual Redis keys and stubbed User queries. TypeScript/build/targeted lint passed. All test keys cleaned up; no real OTPs/tokens printed or modified. User Postman confirmation remains pending; reset-password NOT STARTED.
+
+Verify-reset-otp: DONE. User confirmed successful OTP verification with a 300-second reset token and confirmed replay rejection. Token/code values are not recorded. Reset-password remains NOT STARTED; awaiting user authorization for the next endpoint.
