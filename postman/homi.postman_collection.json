@@ -125,6 +125,226 @@
           "body": "{\n  \"success\": false,\n  \"message\": \"Validation failed\",\n  \"errors\": [\n    {\n      \"field\": \"email\",\n      \"message\": \"Invalid email address\"\n    }\n  ]\n}"
         }
       ]
+    },
+    {
+      "name": "Auth - Verify email",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{registrationEmail}}\",\n  \"otp\": \"{{verificationOtp}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/verify-email",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "verify-email"
+          ]
+        },
+        "description": "Public email verification. Use the code from Gmail within the registration 600-second expiry. Maximum five attempts. Correct verification marks the user verified and consumes the Redis code without issuing tokens. 400 invalid/expired, 409 already verified, 429 attempt limit, 403 inactive account."
+      },
+      "response": [
+        {
+          "name": "200 - Verified",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{registrationEmail}}\",\n  \"otp\": \"{{verificationOtp}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/verify-email",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "verify-email"
+              ]
+            },
+            "description": "Public email verification. Use the code from Gmail within the registration 600-second expiry. Maximum five attempts. Correct verification marks the user verified and consumes the Redis code without issuing tokens. 400 invalid/expired, 409 already verified, 429 attempt limit, 403 inactive account."
+          },
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"success\": true,\n  \"statusCode\": 200,\n  \"message\": \"Email verified successfully\",\n  \"data\": {\n    \"user\": {\n      \"id\": \"example-user-id\",\n      \"name\": \"Test Tenant\",\n      \"email\": \"your-email@example.com\",\n      \"role\": \"TENANT\",\n      \"emailVerified\": true\n    }\n  }\n}"
+        },
+        {
+          "name": "400 - Invalid or expired code",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{registrationEmail}}\",\n  \"otp\": \"{{verificationOtp}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/verify-email",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "verify-email"
+              ]
+            },
+            "description": "Public email verification. Use the code from Gmail within the registration 600-second expiry. Maximum five attempts. Correct verification marks the user verified and consumes the Redis code without issuing tokens. 400 invalid/expired, 409 already verified, 429 attempt limit, 403 inactive account."
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "body": "{\n  \"success\": false,\n  \"message\": \"Invalid or expired verification code\",\n  \"errors\": []\n}"
+        }
+      ]
+    },
+    {
+      "name": "Auth - Resend verification OTP",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{registrationEmail}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/resend-otp",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "resend-otp"
+          ]
+        },
+        "description": "Resend a verification code for an existing active unverified account. Replaces the prior code, resets attempts, expires in 600 seconds, and enforces a 60-second cooldown plus 10 valid requests/IP/15 minutes. Verified/unknown/inactive accounts receive generic success without mail. 429 cooldown, 400 validation, 503 service failure."
+      },
+      "response": [
+        {
+          "name": "200 - Generic success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{registrationEmail}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/resend-otp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "resend-otp"
+              ]
+            },
+            "description": "Resend a verification code for an existing active unverified account. Replaces the prior code, resets attempts, expires in 600 seconds, and enforces a 60-second cooldown plus 10 valid requests/IP/15 minutes. Verified/unknown/inactive accounts receive generic success without mail. 429 cooldown, 400 validation, 503 service failure."
+          },
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"success\": true,\n  \"statusCode\": 200,\n  \"message\": \"If this account needs verification, a new code has been sent\",\n  \"data\": {\n    \"otpExpiresInSeconds\": 600\n  }\n}"
+        },
+        {
+          "name": "429 - Cooldown",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{registrationEmail}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/resend-otp",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "resend-otp"
+              ]
+            },
+            "description": "Resend a verification code for an existing active unverified account. Replaces the prior code, resets attempts, expires in 600 seconds, and enforces a 60-second cooldown plus 10 valid requests/IP/15 minutes. Verified/unknown/inactive accounts receive generic success without mail. 429 cooldown, 400 validation, 503 service failure."
+          },
+          "status": "Too Many Requests",
+          "code": 429,
+          "body": "{\n  \"success\": false,\n  \"message\": \"Please wait 60 seconds before requesting another code\",\n  \"errors\": []\n}"
+        }
+      ]
     }
   ]
 }

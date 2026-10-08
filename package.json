@@ -15,7 +15,9 @@
         "typecheck": "tsc --noEmit",
         "test:registration": "tsx --test tests/registration.test.ts",
         "check:registration-connections": "tsx scripts/check-registration-connections.ts",
-        "test:email": "tsx --test tests/emailTemplates.test.ts"
+        "test:email": "tsx --test tests/emailTemplates.test.ts",
+        "test:verify-email": "tsx --test tests/verifyEmail.test.ts",
+        "test:resend-otp": "tsx --test tests/resendOtp.test.ts"
     },
     "keywords": [],
     "author": "",

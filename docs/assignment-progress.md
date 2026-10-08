@@ -70,3 +70,22 @@ Registration readability: renamed service/controller to registerUser and payload
 - DONE: user supplied a successful POST /api/v1/auth/register response: HTTP 201 envelope, TENANT role, emailVerified=false, verificationRequired=true, 600-second expiry and no login tokens.
 - IN PROGRESS: user confirmation of Gmail OTP delivery and HTML appearance is still pending.
 - Next endpoint remains paused at the user testing checkpoint; verify-email has not been started.
+
+## Email verification endpoint
+
+- Registration and branded OTP delivery: DONE, user confirmed receipt and committed changes.
+- POST /api/v1/auth/verify-email: IN PROGRESS pending user Postman test.
+- DONE: strict validation, five-attempt atomic Redis limit, secure bcrypt comparison, conditional transactional User update, atomic Redis code consumption, safe response and no token issuance.
+- DONE: TypeScript/build; five verification tests with real isolated Redis keys and stubbed PostgreSQL writes, and seven registration regression tests. No real user verified by the automated tests.
+- DONE: Postman request/examples and blank secret verificationOtp environment variable.
+- Commit: NOT STARTED for this endpoint. Resend OTP remains NOT STARTED.
+
+Verification debugging: read-only check confirmed the original test account is active/unverified and its Redis OTP record is missing. A fresh registration code is required to retry. Verification remains IN PROGRESS pending Postman confirmation.
+
+## Resend verification OTP
+
+- DONE: User supplied successful email verification response; verify-email Postman positive test confirmed.
+- IN PROGRESS: POST /api/v1/auth/resend-otp awaiting Postman confirmation.
+- DONE: replacement hashed OTP, attempts reset, 600-second TTL, branded SMTP email, 60-second Redis cooldown, separate IP rate counter, generic response for ineligible accounts, request-specific failure cleanup.
+- DONE: TypeScript/build/targeted lint; four resend tests against isolated real Redis keys and stubbed PostgreSQL/SMTP; seven registration and five verification regression tests. No real user code changed by tests.
+- DONE: Postman examples. Commit for resend: NOT STARTED.

@@ -92,7 +92,29 @@ const refreshToken = catchAsync(async (req: Request, res: Response) => {
 	});
 });
 
+const verifyEmail = catchAsync(async (req: Request, res: Response) => {
+	const result = await AuthService.verifyEmail(req.body);
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Email verified successfully",
+		data: result,
+	});
+});
+
+const resendOtp = catchAsync(async (req: Request, res: Response) => {
+	const result = await AuthService.resendOtp(req.body);
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "If this account needs verification, a new code has been sent",
+		data: result,
+	});
+});
+
 export const AuthController = {
+	resendOtp,
+	verifyEmail,
 	registerUser,
 	loginUser,
 	getMe,

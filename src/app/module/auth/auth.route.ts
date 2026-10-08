@@ -3,9 +3,16 @@ import { Role } from "../../../generated/prisma/enums";
 import { auth } from "../../middleware/checkAuth";
 import { AuthController } from "./auth.controller";
 
-import { registerSchema } from "./auth.validation";
+import {
+	registerSchema,
+	verifyEmailSchema,
+	resendOtpSchema,
+} from "./auth.validation";
 import { validateRequest } from "../../middleware/validateRequest";
-import { registrationRateLimit } from "../../middleware/registrationRateLimit";
+import {
+	registrationRateLimit,
+	resendOtpRateLimit,
+} from "../../middleware/registrationRateLimit";
 
 const router = Router();
 router.post(
@@ -13,6 +20,17 @@ router.post(
 	validateRequest(registerSchema),
 	registrationRateLimit,
 	AuthController.registerUser,
+);
+router.post(
+	"/verify-email",
+	validateRequest(verifyEmailSchema),
+	AuthController.verifyEmail,
+);
+router.post(
+	"/resend-otp",
+	validateRequest(resendOtpSchema),
+	resendOtpRateLimit,
+	AuthController.resendOtp,
 );
 router.post("/login", AuthController.loginUser);
 router.get(

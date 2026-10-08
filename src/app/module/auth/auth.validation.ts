@@ -15,3 +15,12 @@ export const registerSchema = z.strictObject({
 		.regex(/[0-9]/, "Password needs a number")
 		.regex(/[^a-zA-Z0-9]/, "Password needs a special character"),
 });
+
+export const verifyEmailSchema = z.strictObject({
+	email: z.string().trim().toLowerCase().max(254).pipe(z.email()),
+	otp: z.string().regex(/^\d{6}$/, "OTP must be six digits"),
+});
+
+export const resendOtpSchema = z.strictObject({
+	email: z.string().trim().toLowerCase().max(254).pipe(z.email()),
+});
