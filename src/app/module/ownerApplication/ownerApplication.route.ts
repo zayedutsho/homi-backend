@@ -6,6 +6,7 @@ import { submitOwnerApplicationSchema } from "./ownerApplication.validation";
 import { OwnerApplicationController } from "./ownerApplication.controller";
 
 const router = Router();
+router.get("/", auth(Role.ADMIN), OwnerApplicationController.listApplications);
 router.post(
 	"/",
 	auth(Role.TENANT),

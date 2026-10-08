@@ -1452,6 +1452,155 @@
           "body": "{\n  \"success\": false,\n  \"message\": \"You already have a pending owner application\",\n  \"errors\": []\n}"
         }
       ]
+    },
+    {
+      "name": "Admin - List owner applications",
+      "request": {
+        "method": "GET",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{adminToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/owner-applications?page=1&limit=10&status=PENDING",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "owner-applications"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "limit",
+              "value": "10"
+            },
+            {
+              "key": "status",
+              "value": "PENDING"
+            }
+          ]
+        },
+        "description": "Active verified ADMIN only. Optional status PENDING/APPROVED/REJECTED; omit for all. Page>=1 and limit<=100. Safe applicant details and pagination meta; no writes."
+      },
+      "response": [
+        {
+          "name": "Paginated list",
+          "originalRequest": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/owner-applications?page=1&limit=10&status=PENDING",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "owner-applications"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": "PENDING"
+                }
+              ]
+            },
+            "description": "Active verified ADMIN only. Optional status PENDING/APPROVED/REJECTED; omit for all. Page>=1 and limit<=100. Safe applicant details and pagination meta; no writes."
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"success\": true,\n  \"statusCode\": 200,\n  \"message\": \"Owner applications fetched successfully\",\n  \"data\": [],\n  \"meta\": {\n    \"page\": 1,\n    \"limit\": 10,\n    \"total\": 0,\n    \"totalPages\": 0\n  }\n}"
+        },
+        {
+          "name": "Tenant forbidden",
+          "originalRequest": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/owner-applications?page=1&limit=10&status=PENDING",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "owner-applications"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": "PENDING"
+                }
+              ]
+            },
+            "description": "Active verified ADMIN only. Optional status PENDING/APPROVED/REJECTED; omit for all. Page>=1 and limit<=100. Safe applicant details and pagination meta; no writes."
+          },
+          "status": "Forbidden",
+          "code": 403,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"success\": false,\n  \"message\": \"You do not have permission to access this resource\",\n  \"errors\": []\n}"
+        }
+      ]
     }
   ]
 }

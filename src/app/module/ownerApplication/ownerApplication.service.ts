@@ -1,6 +1,7 @@
 import { prisma } from "../../lib/prisma";
 import { AppError } from "../../utils/AppError";
 import type { ISubmitOwnerApplication } from "./ownerApplication.interface";
+import type { IListOwnerApplications } from "./ownerApplication.validation";
 
 const submitApplication = async (
 	userId: string,
@@ -85,4 +86,50 @@ const submitApplication = async (
 	}
 };
 
-export const OwnerApplicationService = { submitApplication };
+const listApplications = async (query: IListOwnerApplications) => {
+	const { page, limit, status } = query;
+	const where = status ? { status } : {};
+	// One repeatable-read snapshot keeps the count and returned page consistent.
+	const [applications, total] = await prisma.$transaction(
+		[
+			prisma.ownerApplication.findMany({
+				where,
+				skip: (page - 1) * limit,
+				take: limit,
+				orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+				select: {
+					id: true,
+					userId: true,
+					reason: true,
+					contactNumber: true,
+					address: true,
+					status: true,
+					reviewedAt: true,
+					rejectionReason: true,
+					createdAt: true,
+					updatedAt: true,
+					user: {
+						select: {
+							id: true,
+							name: true,
+							email: true,
+							role: true,
+							status: true,
+							emailVerified: true,
+							isDeleted: true,
+						},
+					},
+					reviewedBy: { select: { id: true, name: true } },
+				},
+			}),
+			prisma.ownerApplication.count({ where }),
+		],
+		{ isolationLevel: "RepeatableRead" },
+	);
+	return {
+		applications,
+		meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+	};
+};
+
+export const OwnerApplicationService = { submitApplication, listApplications };

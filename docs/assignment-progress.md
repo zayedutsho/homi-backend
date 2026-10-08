@@ -4,7 +4,7 @@
 
 | Endpoint | Implementation | Local verification | Postman | Commit |
 | --- | --- | --- | --- | --- |
-| POST /api/v1/owner-applications | IN PROGRESS | DONE: 6 live tests + 9 auth regressions, schema/build/typecheck/lint | Pending user test | NOT STARTED |
+| GET /api/v1/owner-applications | IN PROGRESS | DONE: 3 live/query tests, 9 auth regressions, typecheck/build/lint | Pending user test | NOT STARTED |
 
 Current status: registration, email verification/resend, credential login, profile, refresh rotation, logout and Google login are DONE with user Postman confirmation. Google commit/push reported complete. Forgot-password is the active endpoint; reset verification and reset-password remain NOT STARTED. OTP storage uses Redis per user instruction. Earlier entries below retain chronological evidence.
 
@@ -193,3 +193,12 @@ Reset-password: DONE. User confirmed the API works successfully in Postman. Auto
 Owner submission local verification: DONE ? six live PostgreSQL tests passed (including direct constraint/concurrency/audit rollback), final HTTP check passed, and nine profile/login regressions passed. Prisma schema validation/client generation, additive migration deployment, build/typecheck/targeted lint passed. All isolated test users/applications/audits were cleaned up. User Postman confirmation remains pending; admin review endpoints NOT STARTED.
 
 Owner application submission: DONE. User confirmed HTTP 201 with a PENDING application and confirmed duplicate pending submission rejection. Postman positive/negative tests passed. Admin review endpoints remain NOT STARTED; awaiting user authorization before proceeding.
+
+## Admin owner-application listing
+
+- User confirmed submission/duplicate rejection and authorized listing.
+- Implemented ADMIN-only GET /api/v1/owner-applications with bounded pagination, optional status filter, safe applicant/reviewer selects, stable sorting, RepeatableRead count/page consistency, strict query validation and standard response/meta. No schema change or writes.
+- Existing safe admin seed function now has npm run seed:admin CLI for manual test setup. No real admin seeded during implementation; user must configure separate ADMIN_NAME/EMAIL/PASSWORD locally if needed.
+- Documentation and Postman list/forbidden examples updated. IN PROGRESS pending final local checks and user Postman confirmation. Approval/rejection endpoints NOT STARTED.
+
+Admin listing local verification: DONE ? three live/query tests passed for pagination/filtering/meta/safe fields/RBAC/account states/validation/stable order, plus nine profile/login regressions. Typecheck/build/targeted lint passed. Admin CLI missing-configuration guard verified without creating an account. Test applications/users cleaned up. No migration required. User Postman confirmation pending; approval/rejection NOT STARTED.

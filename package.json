@@ -27,7 +27,9 @@
         "test:forgot-password": "tsx --test tests/forgotPassword.test.ts",
         "test:verify-reset-otp": "tsx --test tests/verifyResetOtp.test.ts",
         "test:reset-password": "tsx --test tests/resetPassword.test.ts",
-        "test:owner-application": "tsx --test tests/ownerApplication.test.ts"
+        "test:owner-application": "tsx --test tests/ownerApplication.test.ts",
+        "test:list-owner-applications": "tsx --test tests/listOwnerApplications.test.ts",
+        "seed:admin": "tsx scripts/seed-admin.ts"
     },
     "keywords": [],
     "author": "",
