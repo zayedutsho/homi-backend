@@ -19,6 +19,17 @@ const registerUser = catchAsync(async (req: Request, res: Response) => {
 	});
 });
 
+const forgotPassword = catchAsync(async (req: Request, res: Response) => {
+	const result = await AuthService.forgotPassword(req.body);
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message:
+			"If this account is eligible for password recovery, a code has been sent",
+		data: result,
+	});
+});
+
 const googleLogin = catchAsync(async (req: Request, res: Response) => {
 	const result = await AuthService.googleLogin(req.body);
 	for (const [name, token] of Object.entries(result)) {
@@ -169,6 +180,7 @@ const logout = catchAsync(async (req: Request, res: Response) => {
 });
 
 export const AuthController = {
+	forgotPassword,
 	googleLogin,
 	logout,
 	resendOtp,

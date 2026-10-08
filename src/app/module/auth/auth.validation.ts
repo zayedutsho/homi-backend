@@ -25,6 +25,10 @@ export const resendOtpSchema = z.strictObject({
 	email: z.string().trim().toLowerCase().max(254).pipe(z.email()),
 });
 
+export const forgotPasswordSchema = z.strictObject({
+	email: z.string().trim().toLowerCase().max(254).pipe(z.email()),
+});
+
 export const loginSchema = z.strictObject({
 	email: z.string().trim().toLowerCase().max(254).pipe(z.email()),
 	password: z

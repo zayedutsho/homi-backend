@@ -10,6 +10,7 @@ import {
 	loginSchema,
 	refreshTokenSchema,
 	googleLoginSchema,
+	forgotPasswordSchema,
 } from "./auth.validation";
 import { validateRequest } from "../../middleware/validateRequest";
 import {
@@ -19,9 +20,16 @@ import {
 	refreshRateLimit,
 	logoutRateLimit,
 	googleRateLimit,
+	forgotPasswordRateLimit,
 } from "../../middleware/registrationRateLimit";
 
 const router = Router();
+router.post(
+	"/forgot-password",
+	validateRequest(forgotPasswordSchema),
+	forgotPasswordRateLimit,
+	AuthController.forgotPassword,
+);
 router.post(
 	"/google",
 	validateRequest(googleLoginSchema),

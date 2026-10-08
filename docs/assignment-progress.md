@@ -4,9 +4,9 @@
 
 | Endpoint | Implementation | Local verification | Postman | Commit |
 | --- | --- | --- | --- | --- |
-| POST /api/v1/auth/register | IN PROGRESS | DONE: static/build + 7 stubbed automated tests; live signup pending Postman | NOT STARTED | NOT STARTED |
+| POST /api/v1/auth/forgot-password | IN PROGRESS | DONE: 9 Redis/HTTP tests, regressions, typecheck/build/lint | Pending user test | NOT STARTED |
 
-Registration uses Redis for OTP storage per user instruction, superseding the original separate Prisma Otp model requirement. TTL is 600 seconds. Verification/resend endpoints are NOT STARTED; attempt checking and single-use consumption will be added with verification.
+Current status: registration, email verification/resend, credential login, profile, refresh rotation, logout and Google login are DONE with user Postman confirmation. Google commit/push reported complete. Forgot-password is the active endpoint; reset verification and reset-password remain NOT STARTED. OTP storage uses Redis per user instruction. Earlier entries below retain chronological evidence.
 
 ## Requirements coverage
 
@@ -122,7 +122,7 @@ User Postman confirmation: resend OTP returned 200, followed by successful verif
 
 Refresh integration testing: row locking and bounded transaction waits fixed the concurrent-refresh issue found on Neon. Live database tests verify hash storage, replay-family revocation, one concurrent winner, expiry/account rejection and rollback. Temporary test users/sessions are deleted by test cleanup. HTTP body/cookie checks are also being verified.
 
-Final refresh verification: DONE — six live Neon integration/HTTP tests passed; seven login and one profile regression tests passed. Prisma validation/client generation, additive migration deployment, TypeScript, build and targeted lint passed. Refresh endpoint remains IN PROGRESS only pending the user's Postman confirmation. No real user tokens or session hashes were printed.
+Final refresh verification: DONE ï¿½ six live Neon integration/HTTP tests passed; seven login and one profile regression tests passed. Prisma validation/client generation, additive migration deployment, TypeScript, build and targeted lint passed. Refresh endpoint remains IN PROGRESS only pending the user's Postman confirmation. No real user tokens or session hashes were printed.
 
 ## Logout
 
@@ -131,7 +131,7 @@ Final refresh verification: DONE — six live Neon integration/HTTP tests passed; 
 - Implemented: revoke the identified refresh family, clear auth cookies, body/cookie support, Zod validation/IP limit, safe idempotent logout and user row locking shared with refresh. Other login families remain active. Access JWTs remain valid until expiry.
 - Postman logout request/examples/token-variable cleanup added. No schema changes. Commit: NOT STARTED.
 
-Logout verification: DONE — two live Neon/HTTP tests passed, including rotation-family revocation, independent-login preservation, repeat logout, cookie clearing and malformed-body rejection. Temporary test users were cleaned up. TypeScript/build/targeted lint passed. Logout remains IN PROGRESS pending user Postman confirmation.
+Logout verification: DONE ï¿½ two live Neon/HTTP tests passed, including rotation-family revocation, independent-login preservation, repeat logout, cookie clearing and malformed-body rejection. Temporary test users were cleaned up. TypeScript/build/targeted lint passed. Logout remains IN PROGRESS pending user Postman confirmation.
 
 User confirmation: logout Postman test PASSED. POST /api/v1/auth/logout is DONE. Next planned endpoint: Google authentication; configuration readiness checked before implementation.
 
@@ -148,3 +148,13 @@ Google verification: DONE ? 10 Google service/HTTP/cryptographic tests, two live
 User Postman confirmation: genuine Google login returned HTTP 200 with application access and refresh tokens. Google login positive test PASSED. Token values are not recorded. Remaining manual checks: returning-user identity, profile verification flag and negative invalid-token response. No further endpoint started.
 
 Google authentication: DONE. User confirmed genuine Google login success, matching user ID and verified ACTIVE TENANT profile after the returning-login test, and expected invalid-token error response. Manual Google testing confirmation complete. No further endpoint started. Suggested commit: feat(auth): add verified Google tenant login with linked accounts.
+
+## Forgot password
+
+- IN PROGRESS: POST /api/v1/auth/forgot-password, pending verification and user Postman confirmation.
+- Implemented: active verified credential account eligibility, generic response for unknown/ineligible/Google-only accounts, separate PASSWORD_RESET hash and 600-second TTL, silent 60-second cooldown, separate IP rate limit, reset HTML/text email and conditional failure cleanup. No database writes/schema change.
+- Postman request/success/error examples and recoveryEmail variable added. verify-reset-otp/reset-password NOT STARTED. Commit NOT STARTED.
+
+Forgot-password verification: DONE ? nine isolated real Redis/HTTP tests, five email template tests, seven registration and ten Google regression tests passed. TypeScript, build and targeted lint passed. Database reads/SMTP are mocked in recovery tests; no real email sent and no real user OTP modified. Inbox delivery remains pending user Postman confirmation. Reset verification/password reset remain NOT STARTED.
+
+Forgot-password: DONE. User confirmed reset OTP inbox delivery for a credential account and the expected invalid-email Validation failed response with email field error. Google-only account exclusion was verified using read-only eligibility checks; SMTP authentication passed. No OTP values recorded. Awaiting user authorization before starting verify-reset-otp.

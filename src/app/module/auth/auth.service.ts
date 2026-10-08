@@ -5,7 +5,7 @@ import {
 	timingSafeEqual,
 } from "node:crypto";
 import { getRedis } from "../../lib/redis";
-import { sendVerificationEmail } from "../../lib/email";
+import { sendVerificationEmail, sendResetPasswordEmail } from "../../lib/email";
 import bcrypt from "bcryptjs";
 import { googleClient } from "../../lib/google";
 import type { TokenPayload } from "google-auth-library";
@@ -208,6 +208,98 @@ const resendOtp = async (payload: { email: string }) => {
 			console.error("Resend OTP cleanup failed; records will expire");
 		}
 		throw error;
+	}
+};
+
+const forgotPassword = async (payload: { email: string }) => {
+	const email = payload.email.trim().toLowerCase();
+	const otpExpiresInSeconds = 10 * 60;
+	const response = { otpExpiresInSeconds };
+	const client = await getRedis();
+	const user = await prisma.user.findUnique({
+		where: { email },
+		select: {
+			id: true,
+			name: true,
+			password: true,
+			emailVerified: true,
+			status: true,
+			isDeleted: true,
+		},
+	});
+	// Keep the response generic for unknown, Google-only and ineligible accounts.
+	if (
+		!user?.emailVerified ||
+		!user.password ||
+		user.status !== UserStatus.ACTIVE ||
+		user.isDeleted
+	)
+		return response;
+
+	const otpKey = `homi:otp:PASSWORD_RESET:${user.id}`;
+	const cooldownKey = `homi:otp:reset:cooldown:${user.id}`;
+	const requestId = randomUUID();
+	let locked: string | null;
+	try {
+		locked = await client.set(cooldownKey, requestId, { NX: true, EX: 60 });
+	} catch {
+		console.error("Password recovery cooldown storage failed");
+		return response;
+	}
+	if (!locked) return response;
+
+	const otp = randomInt(100000, 1000000).toString();
+	let hashedOtp: string | undefined;
+	try {
+		hashedOtp = await bcrypt.hash(otp, 12);
+		// Replacing the record immediately invalidates the previous code and resets attempts.
+		try {
+			await client.set(
+				otpKey,
+				JSON.stringify({
+					userId: user.id,
+					purpose: "PASSWORD_RESET",
+					hash: hashedOtp,
+					attempts: 0,
+					createdAt: new Date().toISOString(),
+					expiresAt: new Date(
+						Date.now() + otpExpiresInSeconds * 1000,
+					).toISOString(),
+				}),
+				{ EX: otpExpiresInSeconds },
+			);
+		} catch {
+			throw new AppError(503, "Verification storage is unavailable");
+		}
+		await sendResetPasswordEmail(email, {
+			name: user.name,
+			otp,
+			expiresInSeconds: otpExpiresInSeconds,
+		});
+		return response;
+	} catch {
+		// Delete only this request's code/cooldown, preserving any newer request's records.
+		try {
+			await client.eval(
+				`
+        local value = redis.call('GET', KEYS[1])
+        if value and cjson.decode(value).hash == ARGV[1] then redis.call('DEL', KEYS[1]) end
+        if redis.call('GET', KEYS[2]) == ARGV[2] then redis.call('DEL', KEYS[2]) end
+        return 1
+      `,
+				{
+					keys: [otpKey, cooldownKey],
+					arguments: [hashedOtp || "", requestId],
+				},
+			);
+		} catch {
+			console.error(
+				"Password recovery OTP cleanup failed; records will expire",
+			);
+		}
+		// Keep SMTP/storage failures generic too; never log the email, OTP or raw error.
+		console.error("Password recovery delivery failed; request cleaned up");
+		return response;
 	}
 };
 
@@ -728,6 +820,7 @@ const logout = async (token?: string) => {
 };
 
 export const AuthService = {
+	forgotPassword,
 	googleLogin,
 	logout,
 	resendOtp,
