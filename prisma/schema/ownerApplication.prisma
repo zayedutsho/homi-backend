@@ -1,0 +1,40 @@
+enum OwnerApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model OwnerApplication {
+  id              String                 @id @default(uuid())
+  userId          String
+  reason          String
+  contactNumber   String
+  address         String
+  status          OwnerApplicationStatus @default(PENDING)
+  reviewedById    String?
+  reviewedAt      DateTime?
+  rejectionReason String?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  user            User                   @relation("OwnerApplicant", fields: [userId], references: [id], onDelete: Restrict)
+  reviewedBy      User?                  @relation("OwnerReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviews         OwnerApplicationReview[]
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@map("owner_applications")
+}
+
+model OwnerApplicationReview {
+  id            String                 @id @default(uuid())
+  applicationId String
+  reviewerId    String?
+  decision      OwnerApplicationStatus
+  reason        String?
+  createdAt     DateTime               @default(now())
+  application   OwnerApplication       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  reviewer      User?                  @relation(fields: [reviewerId], references: [id], onDelete: SetNull)
+
+  @@index([applicationId, createdAt])
+  @@map("owner_application_reviews")
+}

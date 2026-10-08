@@ -1290,6 +1290,168 @@
           "body": "{\n  \"success\": false,\n  \"message\": \"Invalid or expired password reset token\",\n  \"errors\": []\n}"
         }
       ]
+    },
+    {
+      "name": "Owner - Submit application",
+      "request": {
+        "method": "POST",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{accessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"reason\": \"I manage rental properties and would like to list them on Homi.\",\n  \"contactNumber\": \"+8801700000000\",\n  \"address\": \"Uttara, Dhaka\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/owner-applications",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "owner-applications"
+          ]
+        },
+        "description": "Active verified TENANT only. Creates PENDING application, preserving TENANT role. One pending application per user enforced in PostgreSQL. Repeat returns 409."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 201) {",
+              "  pm.environment.set(\"ownerApplicationId\", pm.response.json().data.id);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "response": [
+        {
+          "name": "Pending application",
+          "originalRequest": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"I manage rental properties and would like to list them on Homi.\",\n  \"contactNumber\": \"+8801700000000\",\n  \"address\": \"Uttara, Dhaka\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/owner-applications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "owner-applications"
+              ]
+            },
+            "description": "Active verified TENANT only. Creates PENDING application, preserving TENANT role. One pending application per user enforced in PostgreSQL. Repeat returns 409."
+          },
+          "status": "Created",
+          "code": 201,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"success\": true,\n  \"statusCode\": 201,\n  \"message\": \"Owner application submitted successfully. Awaiting admin review.\",\n  \"data\": {\n    \"id\": \"APPLICATION_UUID\",\n    \"userId\": \"USER_UUID\",\n    \"reason\": \"I manage rental properties and would like to list them on Homi.\",\n    \"contactNumber\": \"+8801700000000\",\n    \"address\": \"Uttara, Dhaka\",\n    \"status\": \"PENDING\",\n    \"reviewedAt\": null,\n    \"rejectionReason\": null,\n    \"createdAt\": \"ISO_TIMESTAMP\",\n    \"updatedAt\": \"ISO_TIMESTAMP\"\n  }\n}"
+        },
+        {
+          "name": "Duplicate pending application",
+          "originalRequest": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"I manage rental properties and would like to list them on Homi.\",\n  \"contactNumber\": \"+8801700000000\",\n  \"address\": \"Uttara, Dhaka\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/owner-applications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "owner-applications"
+              ]
+            },
+            "description": "Active verified TENANT only. Creates PENDING application, preserving TENANT role. One pending application per user enforced in PostgreSQL. Repeat returns 409."
+          },
+          "status": "Conflict",
+          "code": 409,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"success\": false,\n  \"message\": \"You already have a pending owner application\",\n  \"errors\": []\n}"
+        }
+      ]
     }
   ]
 }

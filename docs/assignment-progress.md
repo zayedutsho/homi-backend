@@ -4,7 +4,7 @@
 
 | Endpoint | Implementation | Local verification | Postman | Commit |
 | --- | --- | --- | --- | --- |
-| POST /api/v1/auth/reset-password | IN PROGRESS | DONE: 7 live reset tests + 27 regressions, typecheck/build/lint | Pending user test | NOT STARTED |
+| POST /api/v1/owner-applications | IN PROGRESS | DONE: 6 live tests + 9 auth regressions, schema/build/typecheck/lint | Pending user test | NOT STARTED |
 
 Current status: registration, email verification/resend, credential login, profile, refresh rotation, logout and Google login are DONE with user Postman confirmation. Google commit/push reported complete. Forgot-password is the active endpoint; reset verification and reset-password remain NOT STARTED. OTP storage uses Redis per user instruction. Earlier entries below retain chronological evidence.
 
@@ -181,3 +181,15 @@ Verify-reset-otp: DONE. User confirmed successful OTP verification with a 300-se
 Reset-password final verification: DONE ? seven isolated live PostgreSQL/Redis reset tests, eight credential login tests including stale-password session prevention, eleven real Redis OTP verification tests, and eight live refresh/logout regressions passed. TypeScript, build and targeted lint passed. Test users/sessions/grants cleaned up; no real user passwords or tokens were changed or logged. User Postman confirmation remains pending.
 
 Reset-password: DONE. User confirmed the API works successfully in Postman. Automated checks cover old/new password login, refresh revocation, token replay, concurrency and rollback; individual manual negative-test results were not separately supplied. Authentication endpoints implemented so far are complete. No next endpoint started; awaiting user authorization for owner application workflow.
+
+## Submit owner application
+
+- User confirmed reset-password works and authorized next endpoint.
+- Implemented authenticated verified active TENANT submission, strict reason/contact/address validation, user lock/current eligibility recheck, transactional application + audit creation, retained review fields/history model and PostgreSQL partial unique index for one pending application per user. Submission does not promote OWNER.
+- OwnerApplication/User applicant and reviewer relations, OwnerApplicationReview history and AuditLog actor relations added. Applicant history restricts hard deletion; normal soft deletion preserved.
+- Prisma validation/client generation and migration deployment passed. Admin review endpoints NOT STARTED. Documentation/Postman request/examples added.
+- IN PROGRESS pending automated verification and user Postman confirmation. Commit NOT STARTED.
+
+Owner submission local verification: DONE ? six live PostgreSQL tests passed (including direct constraint/concurrency/audit rollback), final HTTP check passed, and nine profile/login regressions passed. Prisma schema validation/client generation, additive migration deployment, build/typecheck/targeted lint passed. All isolated test users/applications/audits were cleaned up. User Postman confirmation remains pending; admin review endpoints NOT STARTED.
+
+Owner application submission: DONE. User confirmed HTTP 201 with a PENDING application and confirmed duplicate pending submission rejection. Postman positive/negative tests passed. Admin review endpoints remain NOT STARTED; awaiting user authorization before proceeding.

@@ -26,7 +26,8 @@
         "test:google": "tsx --test tests/googleLogin.test.ts",
         "test:forgot-password": "tsx --test tests/forgotPassword.test.ts",
         "test:verify-reset-otp": "tsx --test tests/verifyResetOtp.test.ts",
-        "test:reset-password": "tsx --test tests/resetPassword.test.ts"
+        "test:reset-password": "tsx --test tests/resetPassword.test.ts",
+        "test:owner-application": "tsx --test tests/ownerApplication.test.ts"
     },
     "keywords": [],
     "author": "",

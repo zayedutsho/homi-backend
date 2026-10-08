@@ -14,6 +14,10 @@ model User {
   tenant            Tenant?
   refreshSessions   RefreshSession[]
   authAccounts      AuthAccount[]
+  ownerApplications OwnerApplication[] @relation("OwnerApplicant")
+  reviewedOwnerApplications OwnerApplication[] @relation("OwnerReviewer")
+  ownerApplicationReviews OwnerApplicationReview[]
+  auditLogs AuditLog[]
 
   @@unique([email])
   @@map("users")
