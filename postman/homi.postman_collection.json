@@ -1601,6 +1601,161 @@
           "body": "{\n  \"success\": false,\n  \"message\": \"You do not have permission to access this resource\",\n  \"errors\": []\n}"
         }
       ]
+    },
+    {
+      "name": "Admin - Approve owner application",
+      "request": {
+        "method": "PATCH",
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{adminToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/owner-applications/{{ownerApplicationId}}/approve",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "owner-applications",
+            "{{ownerApplicationId}}",
+            "approve"
+          ]
+        },
+        "description": "ADMIN only. Approves PENDING application and promotes eligible tenant to OWNER with transactional review history/audit. No payload fields. Repeat approval returns 409."
+      },
+      "response": [
+        {
+          "name": "Approved and promoted",
+          "originalRequest": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/owner-applications/{{ownerApplicationId}}/approve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "owner-applications",
+                "{{ownerApplicationId}}",
+                "approve"
+              ]
+            },
+            "description": "ADMIN only. Approves PENDING application and promotes eligible tenant to OWNER with transactional review history/audit. No payload fields. Repeat approval returns 409."
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"success\": true,\n  \"statusCode\": 200,\n  \"message\": \"Owner application approved successfully\",\n  \"data\": {\n    \"id\": \"APPLICATION_UUID\",\n    \"userId\": \"APPLICANT_UUID\",\n    \"status\": \"APPROVED\",\n    \"reviewedById\": \"ADMIN_UUID\",\n    \"reviewedAt\": \"ISO_TIMESTAMP\",\n    \"rejectionReason\": null,\n    \"updatedAt\": \"ISO_TIMESTAMP\",\n    \"user\": {\n      \"id\": \"APPLICANT_UUID\",\n      \"name\": \"Applicant name\",\n      \"email\": \"applicant@example.com\",\n      \"role\": \"OWNER\"\n    }\n  }\n}"
+        },
+        {
+          "name": "Already reviewed",
+          "originalRequest": {
+            "method": "PATCH",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/owner-applications/{{ownerApplicationId}}/approve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "owner-applications",
+                "{{ownerApplicationId}}",
+                "approve"
+              ]
+            },
+            "description": "ADMIN only. Approves PENDING application and promotes eligible tenant to OWNER with transactional review history/audit. No payload fields. Repeat approval returns 409."
+          },
+          "status": "Conflict",
+          "code": 409,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"success\": false,\n  \"message\": \"Only pending owner applications can be approved\",\n  \"errors\": []\n}"
+        }
+      ]
     }
   ]
 }

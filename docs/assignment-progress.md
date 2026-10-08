@@ -4,7 +4,7 @@
 
 | Endpoint | Implementation | Local verification | Postman | Commit |
 | --- | --- | --- | --- | --- |
-| GET /api/v1/owner-applications | IN PROGRESS | DONE: 3 live/query tests, 9 auth regressions, typecheck/build/lint | Pending user test | NOT STARTED |
+| PATCH /api/v1/owner-applications/:id/approve | IN PROGRESS | DONE: 6 live approval tests + 5 regressions, typecheck/build/lint | Pending user test | NOT STARTED |
 
 Current status: registration, email verification/resend, credential login, profile, refresh rotation, logout and Google login are DONE with user Postman confirmation. Google commit/push reported complete. Forgot-password is the active endpoint; reset verification and reset-password remain NOT STARTED. OTP storage uses Redis per user instruction. Earlier entries below retain chronological evidence.
 
@@ -202,3 +202,16 @@ Owner application submission: DONE. User confirmed HTTP 201 with a PENDING appli
 - Documentation and Postman list/forbidden examples updated. IN PROGRESS pending final local checks and user Postman confirmation. Approval/rejection endpoints NOT STARTED.
 
 Admin listing local verification: DONE ? three live/query tests passed for pagination/filtering/meta/safe fields/RBAC/account states/validation/stable order, plus nine profile/login regressions. Typecheck/build/targeted lint passed. Admin CLI missing-configuration guard verified without creating an account. Test applications/users cleaned up. No migration required. User Postman confirmation pending; approval/rejection NOT STARTED.
+
+Admin owner-application listing: DONE. User confirmed HTTP 200 with the pending application and correct pagination, and confirmed TENANT access is rejected. Postman positive and negative tests passed. Admin approval/rejection endpoints remain NOT STARTED; awaiting user authorization before proceeding.
+
+## Admin owner-application approval
+
+- User confirmed admin listing/tenant denial and authorized approval.
+- Implemented ADMIN-only PATCH /api/v1/owner-applications/:id/approve; UUID/empty-body validation, sorted user locks and application lock, current admin/applicant eligibility, PENDING-only conditional update, OWNER promotion, reviewer/timestamp, review history and audit in one transaction. Self/repeated/ineligible approvals rejected.
+- No schema change. Safe response; existing auth reads database role so OWNER recognized immediately. Real application not approved during implementation. Docs/Postman examples updated.
+- IN PROGRESS pending final local verification and user Postman confirmation. Rejection NOT STARTED. Commit NOT STARTED.
+
+Approval local verification: DONE ? six live PostgreSQL approval tests passed (promotion, history/audit, replay, concurrency, applicant/reviewer eligibility, self approval, rollback and HTTP/profile checks), plus three listing tests, one submission HTTP regression and one profile regression. Typecheck/build/targeted lint passed. Isolated test records cleaned up; real submitted application remains unchanged. User Postman confirmation pending; rejection NOT STARTED.
+
+Admin owner-application approval: DONE. User confirmed successful APPROVED response with OWNER promotion, expected rejection of repeated approval, and applicant /auth/me returning role OWNER. All Postman checks passed. Rejection endpoint remains NOT STARTED; awaiting user authorization before proceeding.

@@ -25,3 +25,6 @@ export const listOwnerApplicationsSchema = z.strictObject({
 export type IListOwnerApplications = z.infer<
 	typeof listOwnerApplicationsSchema
 >;
+
+export const ownerApplicationIdSchema = z.strictObject({ id: z.uuid() });
+export const approveOwnerApplicationSchema = z.strictObject({});

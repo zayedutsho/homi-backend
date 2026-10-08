@@ -2,7 +2,10 @@ import { catchAsync } from "../../utils/catchAsync";
 import { sendResponse } from "../../utils/sendResponse";
 import { AppError } from "../../utils/AppError";
 import { OwnerApplicationService } from "./ownerApplication.service";
-import { listOwnerApplicationsSchema } from "./ownerApplication.validation";
+import {
+	listOwnerApplicationsSchema,
+	ownerApplicationIdSchema,
+} from "./ownerApplication.validation";
 
 const submitApplication = catchAsync(async (req, res) => {
 	if (!req.user) throw new AppError(401, "Authentication is required");
@@ -31,7 +34,23 @@ const listApplications = catchAsync(async (req, res) => {
 	});
 });
 
+const approveApplication = catchAsync(async (req, res) => {
+	if (!req.user) throw new AppError(401, "Authentication is required");
+	const { id } = ownerApplicationIdSchema.parse(req.params);
+	const result = await OwnerApplicationService.approveApplication(
+		req.user.userId,
+		id,
+	);
+	sendResponse(res, {
+		statusCode: 200,
+		success: true,
+		message: "Owner application approved successfully",
+		data: result,
+	});
+});
+
 export const OwnerApplicationController = {
+	approveApplication,
 	submitApplication,
 	listApplications,
 };
