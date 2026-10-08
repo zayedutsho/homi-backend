@@ -144,3 +144,7 @@ User confirmation: logout Postman test PASSED. POST /api/v1/auth/logout is DONE.
 - IN PROGRESS: verification and user Postman confirmation. No further endpoint work until confirmation.
 
 Google verification: DONE ? 10 Google service/HTTP/cryptographic tests, two live database Google integration tests (including rollback), eight refresh/logout regressions, seven credential login tests and seven registration tests passed. Prisma schema validation/client generation, migration deployment, TypeScript, build and targeted lint passed. Live test users were cleaned up. Google identity claims were simulated in automated database tests; genuine browser-token Postman confirmation remains pending. No OTP or credentials were logged. Google endpoint remains IN PROGRESS only pending user testing confirmation.
+
+User Postman confirmation: genuine Google login returned HTTP 200 with application access and refresh tokens. Google login positive test PASSED. Token values are not recorded. Remaining manual checks: returning-user identity, profile verification flag and negative invalid-token response. No further endpoint started.
+
+Google authentication: DONE. User confirmed genuine Google login success, matching user ID and verified ACTIVE TENANT profile after the returning-login test, and expected invalid-token error response. Manual Google testing confirmation complete. No further endpoint started. Suggested commit: feat(auth): add verified Google tenant login with linked accounts.
