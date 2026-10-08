@@ -12,14 +12,21 @@ import { AuthService } from "../src/app/module/auth/auth.service";
 const originalConfig = { ...config };
 const originalFind = prisma.user.findUnique;
 const originalCreateSession = prisma.refreshSession.create;
+const originalTransaction = prisma.$transaction;
 afterEach(() => {
 	prisma.user.findUnique = originalFind;
 	prisma.refreshSession.create = originalCreateSession;
+	prisma.$transaction = originalTransaction;
 	mock.restoreAll();
 	Object.assign(config, originalConfig);
 });
 
 async function fixture() {
+	prisma.$transaction = (async (callback: (transaction: unknown) => unknown) => callback({
+		$queryRaw: async () => [],
+		user: prisma.user,
+		refreshSession: prisma.refreshSession,
+	})) as typeof originalTransaction;
 	prisma.refreshSession.create = (async ({
 		data,
 	}: {
@@ -85,6 +92,16 @@ test("unknown email and wrong password use the same 401 error", async () => {
 		AuthService.loginUser({ email: "missing@example.com", password: "wrong" }),
 		{ statusCode: 401, message: "Invalid email or password" },
 	);
+});
+
+test("login cannot issue a session after a concurrent password change", async () => {
+	const user = await fixture();
+	let reads = 0;
+	let sessions = 0;
+	prisma.user.findUnique = (async () => ({ ...user, password: ++reads === 1 ? user.password : "changed-password-hash" })) as typeof originalFind;
+	prisma.refreshSession.create = (async () => { sessions++; }) as unknown as typeof originalCreateSession;
+	await assert.rejects(AuthService.loginUser({ email: user.email, password: "StrongPassword123!" }), { statusCode: 401 });
+	assert.equal(sessions, 0);
 });
 
 for (const state of ["unverified", "blocked", "deleted"] as const) {

@@ -398,6 +398,105 @@ const verifyResetOtp = async (payload: { email: string; otp: string }) => {
 	return { resetToken, resetTokenExpiresInSeconds };
 };
 
+const resetPassword = async (payload: {
+	resetToken: string;
+	password: string;
+}) => {
+	const invalidToken = "Invalid or expired password reset token";
+	const client = await getRedis();
+	const tokenHash = createHash("sha256")
+		.update(payload.resetToken)
+		.digest("hex");
+	const grantKey = `homi:password-reset:grant:${tokenHash}`;
+	let value: string | null;
+	try {
+		value = await client.get(grantKey);
+	} catch {
+		throw new AppError(503, "Password recovery storage is unavailable");
+	}
+	if (!value) throw new AppError(400, invalidToken);
+	const grantValue = value;
+	let grant: { userId: string; purpose: string; passwordFingerprint: string };
+	try {
+		grant = JSON.parse(value);
+		if (
+			grant.purpose !== "PASSWORD_RESET" ||
+			typeof grant.userId !== "string" ||
+			!grant.userId ||
+			!/^[a-f0-9]{64}$/.test(grant.passwordFingerprint)
+		)
+			throw new Error("Invalid grant");
+	} catch {
+		throw new AppError(400, invalidToken);
+	}
+	const saltRounds = Number(config.bcrypt_salt_rounds || 12);
+	if (!Number.isInteger(saltRounds) || saltRounds < 10 || saltRounds > 15)
+		throw new AppError(
+			503,
+			"BCRYPT_SALT_ROUNDS must be an integer between 10 and 15",
+		);
+	const passwordHash = await bcrypt.hash(payload.password, saltRounds);
+	await prisma.$transaction(
+		async (transaction) => {
+			// Shares the user lock with refresh and logout; competing resets serialize here.
+			await transaction.$queryRaw`SELECT "id" FROM "users" WHERE "id" = ${grant.userId} FOR UPDATE`;
+			const user = await transaction.user.findUnique({
+				where: { id: grant.userId },
+				select: {
+					id: true,
+					password: true,
+					emailVerified: true,
+					status: true,
+					isDeleted: true,
+				},
+			});
+			if (
+				!user?.password ||
+				!user.emailVerified ||
+				user.status !== UserStatus.ACTIVE ||
+				user.isDeleted
+			)
+				throw new AppError(400, invalidToken);
+			const currentFingerprint = createHash("sha256")
+				.update(user.password)
+				.digest("hex");
+			if (
+				!timingSafeEqual(
+					Buffer.from(currentFingerprint),
+					Buffer.from(grant.passwordFingerprint),
+				)
+			)
+				throw new AppError(400, invalidToken);
+			let consumed: number;
+			try {
+				// Rechecks TTL/value after the lock and deletes the grant exactly once.
+				consumed = Number(
+					await client.eval(
+						`
+    if redis.call('GET', KEYS[1]) ~= ARGV[1] then return 0 end
+    return redis.call('DEL', KEYS[1])
+   `,
+						{ keys: [grantKey], arguments: [grantValue] },
+					),
+				);
+			} catch {
+				throw new AppError(503, "Password recovery storage is unavailable");
+			}
+			if (consumed !== 1) throw new AppError(400, invalidToken);
+			// Both database changes roll back together if either write fails.
+			await transaction.user.update({
+				where: { id: user.id },
+				data: { password: passwordHash, needPasswordChange: false },
+			});
+			await transaction.refreshSession.updateMany({
+				where: { userId: user.id, revokedAt: null },
+				data: { revokedAt: new Date() },
+			});
+		},
+		{ maxWait: 10000, timeout: 15000 },
+	);
+};
+
 const verifyEmail = async (payload: { email: string; otp: string }) => {
 	const email = payload.email.trim().toLowerCase();
 	const user = await prisma.user.findUnique({
@@ -549,7 +648,25 @@ const loginUser = async (payload: ILoginUserPayload) => {
 	if (!user.emailVerified)
 		throw new AppError(403, "Please verify your email before logging in");
 
-	return issueLoginTokens(user, prisma);
+	// A reset must not be followed by a session issued from stale password checks.
+	return prisma.$transaction(
+		async (transaction) => {
+			await transaction.$queryRaw`SELECT "id" FROM "users" WHERE "id" = ${user.id} FOR UPDATE`;
+			const current = await transaction.user.findUnique({
+				where: { id: user.id },
+			});
+			if (!current || current.password !== user.password)
+				throw new AppError(401, "Invalid email or password");
+			if (
+				current.status !== UserStatus.ACTIVE ||
+				current.isDeleted ||
+				!current.emailVerified
+			)
+				throw new AppError(403, "Account must be active and email verified");
+			return issueLoginTokens(current, transaction);
+		},
+		{ maxWait: 10000, timeout: 15000 },
+	);
 };
 
 const issueLoginTokens = async (
@@ -915,6 +1032,7 @@ const logout = async (token?: string) => {
 };
 
 export const AuthService = {
+	resetPassword,
 	verifyResetOtp,
 	forgotPassword,
 	googleLogin,

@@ -40,6 +40,25 @@ const verifyResetOtp = catchAsync(async (req: Request, res: Response) => {
 	});
 });
 
+const resetPassword = catchAsync(async (req: Request, res: Response) => {
+	await AuthService.resetPassword(req.body);
+	const cookieOptions = {
+		httpOnly: true,
+		secure: config.node_env === "production",
+		sameSite: "lax" as const,
+		path: "/",
+	};
+	res.clearCookie("accessToken", cookieOptions);
+	res.clearCookie("refreshToken", cookieOptions);
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message:
+			"Password reset successfully. Please log in with your new password.",
+		data: null,
+	});
+});
+
 const googleLogin = catchAsync(async (req: Request, res: Response) => {
 	const result = await AuthService.googleLogin(req.body);
 	for (const [name, token] of Object.entries(result)) {
@@ -190,6 +209,7 @@ const logout = catchAsync(async (req: Request, res: Response) => {
 });
 
 export const AuthController = {
+	resetPassword,
 	verifyResetOtp,
 	forgotPassword,
 	googleLogin,

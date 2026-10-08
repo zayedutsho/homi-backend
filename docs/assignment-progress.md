@@ -4,7 +4,7 @@
 
 | Endpoint | Implementation | Local verification | Postman | Commit |
 | --- | --- | --- | --- | --- |
-| POST /api/v1/auth/verify-reset-otp | IN PROGRESS | DONE: 11 Redis/HTTP tests, 14 regressions, typecheck/build/lint | Pending user test | NOT STARTED |
+| POST /api/v1/auth/reset-password | IN PROGRESS | DONE: 7 live reset tests + 27 regressions, typecheck/build/lint | Pending user test | NOT STARTED |
 
 Current status: registration, email verification/resend, credential login, profile, refresh rotation, logout and Google login are DONE with user Postman confirmation. Google commit/push reported complete. Forgot-password is the active endpoint; reset verification and reset-password remain NOT STARTED. OTP storage uses Redis per user instruction. Earlier entries below retain chronological evidence.
 
@@ -169,3 +169,15 @@ Forgot-password: DONE. User confirmed reset OTP inbox delivery for a credential 
 Verify-reset-otp local verification: DONE ? 11 new tests plus 9 forgot-password and 5 registration-verification regressions passed using isolated actual Redis keys and stubbed User queries. TypeScript/build/targeted lint passed. All test keys cleaned up; no real OTPs/tokens printed or modified. User Postman confirmation remains pending; reset-password NOT STARTED.
 
 Verify-reset-otp: DONE. User confirmed successful OTP verification with a 300-second reset token and confirmed replay rejection. Token/code values are not recorded. Reset-password remains NOT STARTED; awaiting user authorization for the next endpoint.
+
+## Reset password
+
+- User confirmed verify-reset-otp success/replay and authorized this endpoint.
+- Implemented POST /api/v1/auth/reset-password: strict token/strong password validation, opaque grant purpose/expiry/fingerprint checks, one-time Redis consumption, user row locking, transactional password update + all refresh session revocation, current cookie clearing and standard responses.
+- Credential login now rechecks password/status under the shared user lock to avoid issuing sessions from stale password checks during reset. Access JWTs remain valid until expiry. Redis consumption cannot roll back with PostgreSQL; database failure after consumption requires fresh recovery.
+- Seven live PostgreSQL/Redis reset tests passed; final regression checks pending. No schema changes. Documentation and Postman examples updated.
+- IN PROGRESS pending user Postman confirmation. No next endpoint started. Commit NOT STARTED.
+
+Reset-password final verification: DONE ? seven isolated live PostgreSQL/Redis reset tests, eight credential login tests including stale-password session prevention, eleven real Redis OTP verification tests, and eight live refresh/logout regressions passed. TypeScript, build and targeted lint passed. Test users/sessions/grants cleaned up; no real user passwords or tokens were changed or logged. User Postman confirmation remains pending.
+
+Reset-password: DONE. User confirmed the API works successfully in Postman. Automated checks cover old/new password login, refresh revocation, token replay, concurrency and rollback; individual manual negative-test results were not separately supplied. Authentication endpoints implemented so far are complete. No next endpoint started; awaiting user authorization for owner application workflow.

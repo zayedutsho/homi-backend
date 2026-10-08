@@ -34,6 +34,11 @@ export const verifyResetOtpSchema = z.strictObject({
 	otp: z.string().regex(/^\d{6}$/, "OTP must be six digits"),
 });
 
+export const resetPasswordSchema = z.strictObject({
+	resetToken: z.string().regex(/^[a-f0-9]{64}$/, "Invalid reset token format"),
+	password: registerSchema.shape.password,
+});
+
 export const loginSchema = z.strictObject({
 	email: z.string().trim().toLowerCase().max(254).pipe(z.email()),
 	password: z
