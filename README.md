@@ -1,3 +1,5 @@
+> Current housing assignment work: see [registration setup and tests](docs/registration.md) and [assignment progress](docs/assignment-progress.md). The healthcare starter documentation below is historical and contains outdated API/setup descriptions. Registration now uses Redis email OTP and returns no login tokens.
+
 # PH Healthcare System — Backend
 
 REST API for a doctor-appointment platform: patients book consultations, doctors run them, admins manage the platform. This repo is the backend only.

@@ -11,7 +11,11 @@
         "format:check": "npx @biomejs/biome format ./src",
         "format:fix": "npx @biomejs/biome format --write ./src",
         "lint:check": "npx @biomejs/biome lint ./src",
-        "lint:fix": "npx @biomejs/biome lint --write ./src"
+        "lint:fix": "npx @biomejs/biome lint --write ./src",
+        "typecheck": "tsc --noEmit",
+        "test:registration": "tsx --test tests/registration.test.ts",
+        "check:registration-connections": "tsx scripts/check-registration-connections.ts",
+        "test:email": "tsx --test tests/emailTemplates.test.ts"
     },
     "keywords": [],
     "author": "",

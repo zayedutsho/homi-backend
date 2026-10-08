@@ -1,0 +1,130 @@
+{
+  "info": {
+    "name": "Homi Housing API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth - Register tenant",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Test Tenant\",\n  \"email\": \"{{registrationEmail}}\",\n  \"password\": \"{{registrationPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "register"
+          ]
+        },
+        "description": "Public registration. Creates an unverified tenant, stores a bcrypt OTP hash in Redis for 10 minutes, sends SMTP email. No tokens or cookies. Supply a real inbox in registrationEmail. 409 for duplicate email, 400 for invalid body/extra role field, 429 after 10 valid requests/IP per 15 minutes, 503 for configured service failures. Verification email includes responsive Homi HTML and plain text, personalized greeting, actual backend OTP expiry and security warning. Use a fresh email or Gmail plus alias for repeat email-design testing."
+      },
+      "response": [
+        {
+          "name": "201 - Verification required",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Tenant\",\n  \"email\": \"{{registrationEmail}}\",\n  \"password\": \"{{registrationPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Public registration. Creates an unverified tenant, stores a bcrypt OTP hash in Redis for 10 minutes, sends SMTP email. No tokens or cookies. Supply a real inbox in registrationEmail. 409 for duplicate email, 400 for invalid body/extra role field, 429 after 10 valid requests/IP per 15 minutes, 503 for configured service failures."
+          },
+          "status": "Created",
+          "code": 201,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"success\": true,\n  \"statusCode\": 201,\n  \"message\": \"Tenant registered successfully. Please check your email for the verification code.\",\n  \"data\": {\n    \"user\": {\n      \"id\": \"example-user-id\",\n      \"name\": \"Test Tenant\",\n      \"email\": \"your-email@example.com\",\n      \"role\": \"TENANT\",\n      \"emailVerified\": false\n    },\n    \"verificationRequired\": true,\n    \"otpExpiresInSeconds\": 600\n  }\n}"
+        },
+        {
+          "name": "400 - Validation failure",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Tenant\",\n  \"email\": \"{{registrationEmail}}\",\n  \"password\": \"{{registrationPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Public registration. Creates an unverified tenant, stores a bcrypt OTP hash in Redis for 10 minutes, sends SMTP email. No tokens or cookies. Supply a real inbox in registrationEmail. 409 for duplicate email, 400 for invalid body/extra role field, 429 after 10 valid requests/IP per 15 minutes, 503 for configured service failures."
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"success\": false,\n  \"message\": \"Validation failed\",\n  \"errors\": [\n    {\n      \"field\": \"email\",\n      \"message\": \"Invalid email address\"\n    }\n  ]\n}"
+        }
+      ]
+    }
+  ]
+}
